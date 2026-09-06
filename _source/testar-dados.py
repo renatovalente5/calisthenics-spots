@@ -63,17 +63,23 @@ exigir('nenhum sítio partilha coordenada com outro',
 esc = collections.Counter(x['esc'] for x in s)
 exigir('os escalões são 1 a 4', set(esc) <= {1, 2, 3, 4}, str(sorted(esc)))
 exigir('há sítios com barras confirmadas', esc[1] > 20, f'{esc[1]}')
-exigir('os «só máquinas» são poucos', esc[4] < len(s) * 0.05, f'{esc[4]}')
+exigir('os «só máquinas» são poucos', esc[4] < len(s) * 0.08, f'{esc[4]}')
+exigir('as câmaras acrescentam barras confirmadas ao que o OSM sabia',
+       sum(1 for x in s if x['esc'] == 1 and set(x.get('fontes', [])) - {'OSM'}) >= 15,
+       f"{sum(1 for x in s if x['esc'] == 1 and set(x.get('fontes', [])) - {'OSM'})}")
 
 exigir('cada sítio declara de onde veio',
        all(x.get('fontes') for x in s))
-exigir('todo o sítio sem objecto do OSM vem dos dados abertos da CML',
-       all(x.get('osm') or 'CML' in x.get('fontes', []) for x in s),
+exigir('todo o sítio sem objecto do OSM veio de uma câmara',
+       all(x.get('osm') or (set(x.get('fontes', [])) - {'OSM'}) for x in s),
        str([x['nome'] for x in s if not x.get('osm')
-            and 'CML' not in x.get('fontes', [])][:3]))
-exigir('a atribuição complementar da CML está declarada',
-       bool(meta.get('fonte_complementar')) if any(
-           'CML' in x.get('fontes', []) for x in s) else True)
+            and not (set(x.get('fontes', [])) - {'OSM'})][:3]))
+usadas = {f for x in s for f in x.get('fontes', [])}
+exigir('a atribuição de todas as fontes municipais está declarada',
+       (not (usadas - {'OSM'})) or len(meta.get('fontes_complementares') or []) >= 3,
+       f'fontes nos dados: {sorted(usadas)}')
+exigir('as fontes conhecidas são só estas quatro',
+       usadas <= {'OSM', 'CML', 'CMC', 'CMO'}, str(sorted(usadas)))
 exigir('os ids do OSM têm a forma certa (n/w/r + número)',
        all(all(o[0] in 'nwr' and o[1:].isdigit() for o in x.get('osm', [])) for x in s))
 

@@ -29,11 +29,11 @@ jobs:
             exit 1
           fi
 
-      - name: Servidor local
+      - name: Servidor local, no MESMO caminho que o GitHub Pages
         run: |
-          python3 -m http.server 4600 &
+          python3 _source/servidor.py 4600 &
           for i in $(seq 1 40); do
-            curl -sf http://localhost:4600/ >/dev/null && break
+            curl -sf http://localhost:4600/calisthenics-spots/ >/dev/null && break
             sleep 0.5
           done
 

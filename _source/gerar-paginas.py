@@ -18,6 +18,8 @@ import hashlib, json, os, re, sys, datetime, collections
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PAGINAS = os.path.join(RAIZ, '_source', 'paginas')
 SPOTS = os.path.join(RAIZ, 'data', 'spots.json')
+UTILIZADOR = 'renatovalente5'
+REPO = 'calisthenics-spots'
 
 MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
          'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -25,26 +27,26 @@ MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
 RODAPE = """<footer class="rodape">
   <div class="rodape__grelha">
     <div>
-      <h4>Barra Fixe</h4>
+      <h4>Calisthenics Spots</h4>
       <ul>
-        <li><a href="/">Mapa e lista</a></li>
-        <li><a href="/sobre/">Como isto funciona</a></li>
-        <li><a href="/contribuir/">Falta um sítio?</a></li>
+        <li><a href="{{BASE}}">Mapa e lista</a></li>
+        <li><a href="{{BASE}}sobre/">Como isto funciona</a></li>
+        <li><a href="{{BASE}}contribuir/">Falta um sítio?</a></li>
       </ul>
     </div>
     <div>
       <h4>Dados</h4>
       <ul>
         <li><a href="https://www.openstreetmap.org/" rel="noopener">OpenStreetMap</a></li>
-        <li><a href="https://geodados-cml.hub.arcgis.com/" rel="noopener">Lisboa Aberta — CML</a></li>
+        <li><a href="https://dados.gov.pt/" rel="noopener">dados.gov.pt</a></li>
         <li><a href="https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop" rel="noopener">CAOP — DGT</a></li>
-        <li><a href="https://github.com/renatovalente5/barra-fixe" rel="noopener">Código no GitHub</a></li>
+        <li><a href="https://github.com/renatovalente5/calisthenics-spots" rel="noopener">Código no GitHub</a></li>
       </ul>
     </div>
     <div>
       <h4>Legal</h4>
       <ul>
-        <li><a href="/privacidade/">Privacidade</a></li>
+        <li><a href="{{BASE}}privacidade/">Privacidade</a></li>
         <li><a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Licença dos dados (ODbL)</a></li>
       </ul>
     </div>
@@ -52,27 +54,30 @@ RODAPE = """<footer class="rodape">
   <div class="rodape__fim">
     <p>Dados dos sítios do <strong>OpenStreetMap</strong>, disponibilizados sob a
     <a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Open Database License (ODbL)</a>
-    — © contribuidores do OpenStreetMap. Em Lisboa, complementados com os
-    <strong>Equipamentos de Fitness</strong> da <strong>Câmara Municipal de Lisboa</strong>
-    (<a href="https://geodados-cml.hub.arcgis.com/" rel="noopener">Lisboa Aberta</a>, CC0).
+    — © contribuidores do OpenStreetMap. Complementados com dados abertos de três
+    câmaras: <strong>Lisboa</strong> (Equipamentos de Fitness ao Ar Livre, CC0),
+    <strong>Cascais</strong> (Circuito de Manutenção,
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.pt" rel="noopener">CC-BY</a>) e
+    <strong>Oeiras</strong> (Equipamentos de Jogo e Recreio, CC-BY) —
+    são estas que dizem que aparelhos há em cada sítio.
     Concelhos e distritos da Carta Administrativa
     Oficial de Portugal (CAOP), da Direção-Geral do Território. Mosaicos do mapa por
     <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a> e
     <a href="https://openmaptiles.org/" rel="noopener">OpenMapTiles</a>.</p>
-    <p>O Barra Fixe é gratuito, não tem publicidade, não usa cookies e não recolhe
+    <p>O Calisthenics Spots é gratuito, não tem publicidade, não usa cookies e não recolhe
     dados de quem o visita. Última actualização dos dados: {{DATA}}.</p>
   </div>
 </footer>"""
 
 CABECA_TEXTO = """<header class="topo">
-  <a class="marca" href="/" aria-label="Barra Fixe, página inicial">
+  <a class="marca" href="{{BASE}}" aria-label="Calisthenics Spots, página inicial">
     <svg class="marca__pino" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" fill-rule="evenodd" d="M12 1.6c-4.7 0-8.5 3.8-8.5 8.5 0 6.2 8.5 12.3 8.5 12.3s8.5-6.1 8.5-12.3c0-4.7-3.8-8.5-8.5-8.5zM7.6 7.4H16.4V15.6H14.3V9.3H9.7V15.6H7.6Z"/>
     </svg>
-    <span class="marca__nome">Barra <b>Fixe</b></span>
+    <span class="marca__nome">Calisthenics <b>Spots</b></span>
   </a>
   <span style="flex:1 1 auto"></span>
-  <a class="botao botao--fantasma" href="/" style="height:36px;font-size:.8125rem">Ver o mapa</a>
+  <a class="botao botao--fantasma" href="{{BASE}}" style="height:36px;font-size:.8125rem">Ver o mapa</a>
 </header>"""
 
 
@@ -82,6 +87,26 @@ FICHEIROS_DA_VERSAO = [
     'assets/vendor/maplibre-gl.js', 'assets/vendor/maplibre-gl.css',
     'data/spots.json',
 ]
+
+
+def base_e_dominio():
+    """A BASE e o domínio saem do CNAME, e não estão escritos em lado nenhum.
+
+       PORQUÊ. Com um ficheiro CNAME, o GitHub Pages serve o site na raiz do
+       domínio (`/assets/…`) e REENCAMINHA o endereço `*.github.io` para lá.
+       Sem CNAME, serve-o em `/<repositório>/`, e todo o caminho absoluto que
+       comece por `/` aponta para fora do site — a folha de estilos, os dados,
+       o service worker, tudo.
+
+       Como o domínio ainda não está comprado, o CNAME sai do repositório e a
+       BASE passa a `/calisthenics-spots/`. No dia em que o domínio existir, basta pôr
+       o ficheiro CNAME de volta e reconstruir: nada mais muda."""
+    caminho = os.path.join(RAIZ, 'CNAME')
+    if os.path.exists(caminho):
+        dominio = open(caminho, encoding='utf-8').read().strip()
+        if dominio:
+            return '/', 'https://' + dominio
+    return f'/{REPO}/', f'https://{UTILIZADOR}.github.io/{REPO}'
 
 
 def versao():
@@ -98,6 +123,9 @@ def versao():
         if os.path.exists(caminho):
             h.update(open(caminho, 'rb').read())
     return h.hexdigest()[:8]
+
+
+BASE, SITE = None, None
 
 
 def numeros():
@@ -124,12 +152,17 @@ def numeros():
         'ANO': f'{hoje.year}',
         'EXTRAIDO': meta.get('extraido_em', '') or hoje.isoformat(),
         'VERSAO': versao(),
+        'BASE': BASE,
+        'SITE': SITE,
         'RODAPE': RODAPE,
         'CABECA_TEXTO': CABECA_TEXTO,
     }
 
 
 def main():
+    global BASE, SITE
+    BASE, SITE = base_e_dominio()
+    print(f'  base «{BASE}», site {SITE}')
     vals = numeros()
     # O RODAPE também tem marcadores; resolve-se antes de ser injectado.
     for k in ('RODAPE', 'CABECA_TEXTO'):
@@ -140,9 +173,24 @@ def main():
     if not os.path.isdir(PAGINAS):
         sys.exit(f'Falta {PAGINAS}')
 
+    # O manifesto também leva a BASE: com o `start_url` errado, uma aplicação
+    # instalada abre numa página em branco.
+    molde_man = os.path.join(RAIZ, '_source', 'paginas-manifest.json')
+    if os.path.exists(molde_man):
+        man = open(molde_man, encoding='utf-8').read()
+        for _ in range(3):
+            man = re.sub(r'\{\{(\w+)\}\}', lambda m: vals.get(m.group(1), m.group(0)), man)
+        sobra_man = re.findall(r'\{\{(\w+)\}\}', man)
+        if sobra_man:
+            sys.exit(f'ERRO no manifesto: marcadores sem valor: {sorted(set(sobra_man))}')
+        open(os.path.join(RAIZ, 'manifest.webmanifest'), 'w', encoding='utf-8').write(man)
+        print('  paginas-manifest.json -> manifest.webmanifest')
+
     # O service worker sai do mesmo molde e leva a mesma versão.
     if os.path.exists(SW_MODELO):
-        sw = open(SW_MODELO, encoding='utf-8').read().replace('{{VERSAO}}', vals['VERSAO'])
+        sw = open(SW_MODELO, encoding='utf-8').read()
+        for _ in range(3):
+            sw = re.sub(r'\{\{(\w+)\}\}', lambda m: vals.get(m.group(1), m.group(0)), sw)
         sobra_sw = re.findall(r'\{\{(\w+)\}\}', sw)
         if sobra_sw:
             sys.exit(f'ERRO no sw.js: marcadores sem valor: {sorted(set(sobra_sw))}')

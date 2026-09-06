@@ -1,16 +1,16 @@
 {
-  "name": "Barra Fixe — barras de rua em Portugal",
-  "short_name": "Barra Fixe",
+  "name": "Calisthenics Spots — barras de rua em Portugal",
+  "short_name": "Calisthenics Spots",
   "description": "O mapa das barras de rua para calistenia em Portugal.",
   "lang": "pt-PT",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/calisthenics-spots/",
+  "scope": "/calisthenics-spots/",
   "display": "standalone",
-  "background_color": "#F5F3EE",
-  "theme_color": "#F5F3EE",
+  "background_color": "#F6F3EE",
+  "theme_color": "#F6F3EE",
   "icons": [
-    { "src": "/assets/img/icone-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/assets/img/icone-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/assets/img/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/calisthenics-spots/assets/img/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/calisthenics-spots/assets/img/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/calisthenics-spots/assets/img/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

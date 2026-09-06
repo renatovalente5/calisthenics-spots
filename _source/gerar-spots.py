@@ -276,6 +276,7 @@ BARRAS = {
     'rings': 'argolas', 'gymnastic_rings': 'argolas',
     'wall_bars': 'espaldar', 'stall_bars': 'espaldar',
     'push-up': 'flexoes', 'push_up': 'flexoes',
+    'monkey_bars': 'escada_horizontal', 'ladder': 'escada_horizontal',
     'sit-up': 'abdominais', 'sit_up': 'abdominais', 'captains_chair': 'abdominais',
     'stretch_bars': 'alongamento', 'hyperextension': 'lombares', 'squat': 'agachamento',
     'slackline': 'slackline', 'climbing': 'escalada', 'rope': 'corda', 'rope_climb': 'corda',
@@ -293,6 +294,9 @@ MAQUINAS = {
 # Estes cinco são o que faz de um sítio um sítio de calistenia. Os outros são
 # extras simpáticos — uma caixa e umas escadas não fazem um treino de barras.
 NUCLEO = {'barra_fixa', 'paralelas', 'escada_horizontal', 'argolas', 'espaldar'}
+# Tudo o que a aplicação sabe mostrar. Um aparelho que uma câmara invente e que
+# não esteja aqui é ignorado em vez de aparecer como uma etiqueta vazia.
+APARELHOS_CONHECIDOS = set(BARRAS.values()) | {'suspensao'}
 
 # Alguns mapeadores portugueses escreveram o aparelho em português no
 # `fitness_station`, ou puseram-no no `name`. «Barras Paralelas», «Barras
@@ -323,8 +327,12 @@ def _do_texto(s, ap):
 def aparelhos_de(tags):
     """(aparelhos vistos, viu_alguma_maquina) para UM elemento do OSM."""
     ap, maq = set(), False
+    # `playground=horizontal_bar` descreve o mesmo aparelho que
+    # `fitness_station=horizontal_bar`, só que num parque infantil. Uma barra
+    # onde se pendura o corpo é uma barra, esteja ao pé de um escorrega ou não.
     for bruto in re.split(r'[;,]', (tags.get('fitness_station') or '')) + \
-                 re.split(r'[;,]', (tags.get('sport') or '')):
+                 re.split(r'[;,]', (tags.get('sport') or '')) + \
+                 re.split(r'[;,]', (tags.get('playground') or '')):
         b = bruto.strip()
         if not b:
             continue
@@ -416,9 +424,45 @@ def main():
 
     els = [e for e in json.load(open(os.path.join(BRUTO, 'aparelhos.json')))['elements']
            if e.get('type') != 'count']
+
+    # OS DADOS ABERTOS DAS CÂMARAS entram no MESMO agrupamento que os nós do
+    # OpenStreetMap, disfarçados de elementos. Assim um circuito que exista nas
+    # duas fontes sai como UM sítio, e o que a câmara sabe sobre os aparelhos
+    # soma-se ao que o OSM sabe — sem uma segunda passagem de fusão a fazer
+    # quase o mesmo com regras ligeiramente diferentes.
+    #
+    # E é isto que responde à pergunta que o OSM não responde: Cascais publica
+    # coluna a coluna se cada circuito tem barra de elevação, paralelas,
+    # espaldar e argolas; Oeiras publica o nome de cada aparelho.
+    municipais = []
+    fm = os.path.join(BRUTO, 'municipios.json')
+    meta_municipal = {}
+    if os.path.exists(fm):
+        dm = json.load(open(fm, encoding='utf-8'))
+        meta_municipal = dm.get('meta', {})
+        for i, pt in enumerate(dm.get('pontos', [])):
+            municipais.append({
+                'type': 'municipal', 'id': i,
+                'lat': pt['lat'], 'lon': pt['lon'],
+                'fonte': pt.get('fonte'),
+                'nome_municipal': pt.get('nome'),
+                'rua_municipal': pt.get('rua'),
+                'ap_municipal': pt.get('ap') or [],
+                'nega_municipal': pt.get('nega') or [],
+                'maquina_municipal': bool(pt.get('maquina')),
+                'tags': {},
+            })
+        print(f'dados abertos das câmaras: {len(municipais)} pontos '
+              f'({sum(1 for m in municipais if "barra_fixa" in m["ap_municipal"])} '
+              f'com barra declarada)')
+
     pontos, elementos = [], []
     recusados = collections.Counter()
-    for e in els:
+    for e in els + municipais:
+        if e['type'] == 'municipal':
+            pontos.append((e['lat'], e['lon']))
+            elementos.append(e)
+            continue
         motivo = deitar_fora(e.get('tags', {}))
         if motivo:
             recusados[motivo] += 1
@@ -638,8 +682,44 @@ def main():
         idxs = [j for i in grupo for j in brutos[i]['idx']]
         tags = [elementos[j].get('tags', {}) for j in idxs]
         escalao, ap = classificar(tags)
+
+        # O QUE A CÂMARA DIZ GANHA AO QUE SE ADIVINHA. Um circuito que Cascais
+        # declara com `barra_elevacao = Sim` passa a «barras confirmadas», mesmo
+        # que o OpenStreetMap não diga nada — e é isto que faz a diferença entre
+        # 56 e 80 sítios confirmados.
+        fontes = set()
+        ap_mun, nega_mun, so_maquinas_mun = set(), set(), False
+        nome_mun = rua_mun = None
+        for j in idxs:
+            e = elementos[j]
+            if e['type'] != 'municipal':
+                fontes.add('OSM')
+                continue
+            fontes.add(e['fonte'])
+            ap_mun |= set(e['ap_municipal'])
+            nega_mun |= set(e['nega_municipal'])
+            so_maquinas_mun = so_maquinas_mun or e['maquina_municipal']
+            if e['nome_municipal'] and (not nome_mun or
+                                        len(e['nome_municipal']) > len(nome_mun)):
+                nome_mun = e['nome_municipal']
+            if e['rua_municipal'] and not rua_mun:
+                rua_mun = e['rua_municipal']
+        ap |= {a for a in ap_mun if a in APARELHOS_CONHECIDOS}
+        # E o que a câmara NEGA também conta: um circuito onde ela diz que não
+        # há barra não deve aparecer como se pudesse ter.
+        ap -= (nega_mun - ap_mun)
+        if ap & NUCLEO:
+            escalao = 1
+        elif ap:
+            escalao = 2
+        elif so_maquinas_mun:
+            escalao = 4
+
         b0 = brutos[grupo[0]]
         nome = b0['ctx'][1] if b0['ctx'] else (b0['loc'][1] if b0['loc'] else None)
+        # O nome municipal é o que está na placa. Só ganha se disser mais.
+        if nome_mun and len(nome_mun) > len(nome or ''):
+            nome = nome_mun
         mun = b0['mun']
         spots.append(dict(
             nome=nome,
@@ -649,7 +729,7 @@ def main():
             reg=mun[2] if mun else None,
             dico=mun[3] if mun else None,
             loc=b0['loc'][1] if b0['loc'] else None,
-            rua=b0['rua'][1] if b0['rua'] else None,
+            rua=(b0['rua'][1] if b0['rua'] else None) or rua_mun,
             esc=escalao,
             ap=sorted(ap),
             n=len(idxs),
@@ -661,65 +741,13 @@ def main():
             h24=any(t.get('opening_hours') == '24/7' for t in tags),
             surf=next((t['surface'] for t in tags if t.get('surface')), None),
             op=next((t['operator'] for t in tags if t.get('operator')), None),
-            osm=sorted({f"{elementos[j]['type'][0]}{elementos[j]['id']}" for j in idxs}),
+            osm=sorted({f"{elementos[j]['type'][0]}{elementos[j]['id']}"
+                        for j in idxs if elementos[j]['type'] != 'municipal'}),
+            fontes=sorted(fontes),
         ))
 
-    # ------------------------------------------------- os dados abertos da CML
-    #
-    # 67 equipamentos de fitness da Câmara Municipal de Lisboa, em CC0. Fazem
-    # duas coisas, e a segunda é a mais valiosa:
-    #
-    #   · os que o OSM não tem entram como sítios novos;
-    #   · os que o OSM tem EMPRESTAM O NOME. «Circuito de Manutenção do Parque
-    #     José Gomes Ferreira» é o nome municipal do sítio; o derivado do
-    #     polígono do parque dá só «Parque José Gomes Ferreira». O nome
-    #     municipal é o que está na placa lá no sítio.
-    #
-    # RAIO 60 m: metade do raio de contexto. Um equipamento da CML e um nó do
-    # OSM a essa distância são o mesmo. Mais do que isso começava a colar
-    # equipamentos de parques vizinhos, que em Lisboa estão perto uns dos outros.
-    caminho_cml = os.path.join(BRUTO, 'lisboa-cml.json')
-    novos_cml = emprestados = 0
-    if os.path.exists(caminho_cml):
-        cml = json.load(open(caminho_cml)).get('features', [])
-        for f in cml:
-            g = (f.get('geometry') or {}).get('coordinates')
-            if not g:
-                continue
-            lon_c, lat_c = round(g[0], 5), round(g[1], 5)
-            props = f.get('properties') or {}
-            nome_c = limpar_nome_cml(props.get('NOME'))
-            if not nome_c:
-                continue
-            perto = min(spots, key=lambda x: dist((lat_c, lon_c), (x['lat'], x['lon'])),
-                        default=None)
-            d_perto = dist((lat_c, lon_c), (perto['lat'], perto['lon'])) if perto else 1e9
-            if perto and d_perto <= 60:
-                # O nome municipal ganha ao derivado, mas só se for MAIS
-                # informativo — não se troca «Jardim do Torel» por «Fitness».
-                if len(nome_c) > len(perto['nome'] or ''):
-                    perto['nome'] = nome_c
-                    emprestados += 1
-                perto.setdefault('fontes', []).append('CML')
-                continue
-            mun = municipio_de(lat_c, lon_c)
-            loc = localidade_de(lat_c, lon_c)
-            spots.append(dict(
-                nome=nome_c, lat=lat_c, lon=lon_c,
-                con=mun[0] if mun else None, dis=mun[1] if mun else None,
-                reg=mun[2] if mun else None, dico=mun[3] if mun else None,
-                loc=loc[1] if loc else None,
-                rua=limpar_morada_cml(props.get('MORADA')),
-                esc=3, ap=[], n=1, zonas=1,
-                lit=None, wc=None, h24=False, surf=None, op='Câmara Municipal de Lisboa',
-                osm=[], fontes=['CML']))
-            novos_cml += 1
     for x in spots:
-        x.setdefault('fontes', ['OSM'] if x['osm'] else ['CML'])
-        x['fontes'] = sorted(set(x['fontes']))
-    if novos_cml or emprestados:
-        print(f'dados abertos da CML: +{novos_cml} sítios novos, '
-              f'{emprestados} nomes melhorados')
+        x['fontes'] = sorted(set(x.get('fontes') or (['OSM'] if x['osm'] else [])))
 
     spots.sort(key=lambda s: (s['con'] or 'zz', s['nome'] or 'zz'))
 
@@ -729,15 +757,18 @@ def main():
     # isso a atribuição vive DENTRO do JSON, e não só na página.
     saida = {
         'meta': {
-            'nome': 'Barra Fixe — sítios com equipamento de exercício ao ar livre em Portugal',
+            'nome': 'Calisthenics Spots — sítios com equipamento de exercício ao ar livre em Portugal',
             'fonte': 'OpenStreetMap',
             'fonte_url': 'https://www.openstreetmap.org/copyright',
             'licenca': 'ODbL 1.0',
             'licenca_url': 'https://opendatacommons.org/licenses/odbl/1-0/',
             'atribuicao': '© contribuidores do OpenStreetMap',
             'limites_administrativos': 'CAOP — Direção-Geral do Território',
-            'fonte_complementar': 'Câmara Municipal de Lisboa, Equipamentos de '
-                                  'Fitness (CC0 / CCZero)',
+            'fontes_complementares': [
+                'Câmara Municipal de Lisboa — Equipamentos de Fitness ao Ar Livre (CC0)',
+                'Câmara Municipal de Cascais — Circuito de Manutenção (CC-BY 4.0)',
+                'Câmara Municipal de Oeiras — Equipamentos de Jogo e Recreio (CC-BY 4.0)',
+            ],
             'consulta': '_source/overpass.txt',
             'extraido_em': extraido_em(),
             'gerado_em': datetime.date.today().isoformat(),

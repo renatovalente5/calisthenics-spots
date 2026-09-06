@@ -4,7 +4,7 @@ Allow: /
 # Os dados são públicos e livres (ODbL). Se os quiseres, leva o ficheiro
 # inteiro em vez de rastejar o site — está tudo aqui, com a atribuição lá
 # dentro, e é um pedido em vez de mil:
-#   https://barrafixe.pt/data/spots.json
+#   https://calisthenics-spots.pt/data/spots.json
 # A fonte original é o OpenStreetMap: https://www.openstreetmap.org/copyright
 
-Sitemap: https://barrafixe.pt/sitemap.xml
+Sitemap: https://calisthenics-spots.pt/sitemap.xml

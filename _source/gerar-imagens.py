@@ -78,7 +78,7 @@ def pagina_og(n_spots, n_concelhos, n_barras):
 <div class=marca>
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <path fill="{CALCADA}" fill-rule="evenodd" d="{PINO}"/></svg>
-  <span>Barra <b>Fixe</b></span>
+  <span>Calisthenics <b>Spots</b></span>
 </div>
 <h1>Encontra barras de rua perto de ti.</h1>
 <p>Parques com barras de elevações, paralelas e argolas — em todo o país.</p>

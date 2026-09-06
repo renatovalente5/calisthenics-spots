@@ -1,55 +1,73 @@
-/* Barra Fixe — sistema de design
+/* Calisthenics Spots — sistema de design
    ==============================================================
-   Uma paleta de ferro oxidado sobre calçada. Os contrastes estão todos medidos
-   contra o fundo em que são mesmo usados, não «à vista». Ver CONTRASTE.md.
-
    Regra que não se quebra: nenhuma cor tem a sua ÚNICA definição dentro de um
    @media ou de um [data-theme]. O tema claro define tudo em :root; o escuro só
    redefine o que muda. Um token que só exista no escuro fica indefinido para
    quem tem o sistema em claro, e a página sai sem cor nenhuma. */
 
+/* --- COR: «Amora». Violeta sobre um fundo de osso morno.
+       A escolha do violeta NÃO foi de gosto. Converteram-se para OKLCH as 25
+       cores de marca dos outros sites do autor e mediram-se os matizes
+       ocupados: 26, 30, 36, 39, 47, 70, 71, 76, 84, 86, 86, 89, 90, 91, 129,
+       138, 163, 172, 209, 223, 249, 254, 257, 259, 345. O maior vão livre é de
+       259 a 345 — 86 graus centrados em 302, que é violeta. É a única banda
+       larga que ninguém ocupa.
+       E o que faz isto parecer AMIGÁVEL não é o violeta: é o fundo de osso
+       morno (#F6F3EE) e um preto que leva um resto de violeta em vez de ser
+       preto puro. O violeta dá a energia; os neutros dão o calor.
+       Todos os pares foram MEDIDOS com a fórmula da WCAG. Os que falharam à
+       primeira — as três cores de selo sobre os seus fundos suaves — foram
+       corrigidos até passarem, e os valores estão ao lado. */
 :root {
   color-scheme: light dark;
 
-  /* --- cor: tema claro (o predefinido) */
-  --ground: #F5F3EE;        /* Calçada — calcário quente, o passeio português */
+  --ground: #F6F3EE;
   --surface: #FFFFFF;
-  --surface-2: #EFECE5;
-  --ink: #14161A;           /* Grafite */
-  --ink-muted: #565F6A;     /* Pedra — 5,9:1 sobre --ground */
-  --ink-faint: #8A929C;
-  --line: #DFDACF;
-  --line-strong: #C7C0B2;
+  --surface-2: #EEEAE2;
+  --ink: #211D28;           /* 14,86 sobre ground · 16,05 sobre surface */
+  --ink-muted: #656072;     /*  5,42 sobre ground ·  5,86 sobre surface */
+  --ink-faint: #8F8A9B;     /*  3,05 — decoração, nunca texto corrido */
+  --line: #E1DCD3;          /* divisórias: decorativas, sem mínimo */
+  --line-strong: #918B80;
+  --line-campo: #918B80;    /*  3,08 sobre surface — contornos de CAMPOS */
 
-  --brand: #B03A17;         /* Ferrugem — texto, ligações. 5,47:1 sobre --ground */
-  --brand-vivid: #E85D2A;   /* Ferro Quente — pinos e preenchimentos GRANDES. Nunca texto. */
-  --brand-soft: #FBEDE7;
-  --on-brand: #FFFFFF;      /* 6,06:1 sobre --brand */
+  --brand: #7C4DBD;         /*  5,08 sobre ground ·  5,49 sobre surface */
+  --brand-vivid: #9D4DE8;   /* pinos e preenchimentos grandes; nunca texto */
+  --brand-soft: #EBE4F9;
+  --on-brand: #FFFFFF;      /*  5,49 sobre brand */
 
-  --ok: #2E7048;            /* Musgo — «barras confirmadas» */
-  --ok-soft: #E6F0E9;
-  --info: #0C6E7A;          /* Atlântico */
-  --info-soft: #E3F1F3;
-  --warn: #8A6410;
-  --warn-soft: #F7EEDA;
+  --ok: #147D41;            /*  4,61 sobre ok-soft */
+  --ok-soft: #E9F4ED;
+  --info: #0074A4;          /*  4,57 sobre info-soft */
+  --info-soft: #E6F2F8;
+  --warn: #976203;          /*  4,60 sobre warn-soft */
+  --warn-soft: #F8F1E4;
+
+  /* Os pinos do mapa. Lidos daqui pelo mapa.js — mudar a paleta muda o mapa. */
+  --pino-confirmado: #9D4DE8;
+  --pino-provavel: #0074A4;
+  --pino-duvida: #77757C;
+  --pino-maquinas: #976203;
+  /* A AURÉOLA DUPLA, e não é enfeite. Sobre satélite, um anel branco some-se na
+     areia e no betão (1,2:1) e um anel escuro some-se nas árvores (1,6:1). Com
+     os dois, o pior fundo — asfalto — ainda dá 5,73:1 num deles. */
+  --pino-anel-claro: #FFFFFF;
+  --pino-anel-escuro: #100D14;
 
   /* --- forma */
-  --r-sm: 8px;
-  --r: 14px;
-  --r-lg: 20px;
+  --r-sm: 9px;
+  --r: 15px;
+  --r-lg: 22px;
   --r-full: 999px;
 
-  /* --- sombra: discreta, para não sujar o fundo quente */
-  --sombra-1: 0 1px 2px rgba(20, 22, 26, .06), 0 1px 1px rgba(20, 22, 26, .04);
-  --sombra-2: 0 4px 16px rgba(20, 22, 26, .10), 0 1px 3px rgba(20, 22, 26, .06);
-  --sombra-3: 0 12px 40px rgba(20, 22, 26, .16), 0 2px 8px rgba(20, 22, 26, .08);
+  --sombra-1: 0 1px 2px rgba(33, 29, 40, .06), 0 1px 1px rgba(33, 29, 40, .04);
+  --sombra-2: 0 4px 16px rgba(33, 29, 40, .10), 0 1px 3px rgba(33, 29, 40, .06);
+  --sombra-3: 0 12px 40px rgba(33, 29, 40, .16), 0 2px 8px rgba(33, 29, 40, .08);
 
-  /* --- tipo. Pilha do sistema: zero pedidos à rede, zero cookies de terceiros,
-         e é a letra que a pessoa já conhece do telemóvel dela. A personalidade
-         vem do tracking apertado nos tamanhos grandes, não de uma fonte paga. */
+  /* --- tipo. Pilha do sistema: zero pedidos à rede, zero cookies de terceiros. */
   --fonte: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
            "Noto Sans", "Liberation Sans", Arial, sans-serif;
-  --fonte-num: ui-monospace, SFMono-Regular, "SF Mono", Menoto, Consolas, monospace;
+  --fonte-num: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
 
   --t-xs: .75rem;
   --t-sm: .8125rem;
@@ -58,63 +76,67 @@
   --t-lg: 1.375rem;
   --t-xl: 1.875rem;
   --t-2xl: 2.5rem;
-  --t-3xl: clamp(2.5rem, 7vw, 4rem);
 
-  /* --- medidas */
-  --barra-h: 60px;          /* cabeçalho */
-  --lista-w: 420px;         /* coluna da lista, em ecrã largo */
-  --nav-h: 58px;            /* barra de vistas, no telemóvel */
+  --barra-h: 60px;
+  --lista-w: 420px;
+  --nav-h: 58px;
 }
 
-/* O escuro: só o que muda. Guardado com :not([data-theme="light"]) para que a
-   escolha explícita da pessoa ganhe ao sistema, nos dois sentidos. */
+/* O escuro: só o que muda. Nenhuma cor tem a sua ÚNICA definição aqui — se
+   tivesse, ficava indefinida para quem tem o sistema em claro. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #14161A;
-    --surface: #1C1F25;
-    --surface-2: #232830;   /* Aço */
-    --ink: #F5F3EE;
-    --ink-muted: #9AA3AE;
-    --ink-faint: #6C7681;
-    --line: #2C323B;
-    --line-strong: #3D4550;
-    --brand: #F5794A;
-    --brand-vivid: #F5794A;
-    --brand-soft: #35211A;
-    --on-brand: #1A0D07;
-    --ok: #6FCF97;
-    --ok-soft: #1B2E22;
-    --info: #3FB6C4;
-    --info-soft: #10292D;
-    --warn: #F0B429;
-    --warn-soft: #2E2512;
-    --sombra-1: 0 1px 2px rgba(0, 0, 0, .4);
-    --sombra-2: 0 4px 16px rgba(0, 0, 0, .45);
-    --sombra-3: 0 12px 40px rgba(0, 0, 0, .55);
+    --ground: #110F15;
+    --surface: #1B1920;
+    --surface-2: #27252D;
+    --ink: #F0ECE6;
+    --ink-muted: #A5A0AF;
+    --ink-faint: #625E6B;
+    --line: #333039;
+    --line-strong: #726F7B;
+    --line-campo: #726F7B;
+    --brand: #B9A3E4;
+    --brand-vivid: #B67CF0;
+    --brand-soft: #2E2340;
+    --on-brand: #130F1B;
+    --ok: #5FB77C;          /* 6,67 sobre ok-soft */
+    --ok-soft: #132318;
+    --info: #5AAFD6;        /* 6,43 sobre info-soft */
+    --info-soft: #0F2530;
+    --warn: #D9A45E;        /* 7,17 sobre warn-soft */
+    --warn-soft: #2A2013;
+    --pino-confirmado: #B67CF0;
+    --pino-duvida: #8E8B96;
+    --sombra-1: 0 1px 2px rgba(0, 0, 0, .5);
+    --sombra-2: 0 4px 16px rgba(0, 0, 0, .55);
+    --sombra-3: 0 12px 40px rgba(0, 0, 0, .65);
   }
 }
 :root[data-theme="dark"] {
-  --ground: #14161A;
-  --surface: #1C1F25;
-  --surface-2: #232830;
-  --ink: #F5F3EE;
-  --ink-muted: #9AA3AE;
-  --ink-faint: #6C7681;
-  --line: #2C323B;
-  --line-strong: #3D4550;
-  --brand: #F5794A;
-  --brand-vivid: #F5794A;
-  --brand-soft: #35211A;
-  --on-brand: #1A0D07;
-  --ok: #6FCF97;
-  --ok-soft: #1B2E22;
-  --info: #3FB6C4;
-  --info-soft: #10292D;
-  --warn: #F0B429;
-  --warn-soft: #2E2512;
-  --sombra-1: 0 1px 2px rgba(0, 0, 0, .4);
-  --sombra-2: 0 4px 16px rgba(0, 0, 0, .45);
-  --sombra-3: 0 12px 40px rgba(0, 0, 0, .55);
+  --ground: #110F15;
+  --surface: #1B1920;
+  --surface-2: #27252D;
+  --ink: #F0ECE6;
+  --ink-muted: #A5A0AF;
+  --ink-faint: #625E6B;
+  --line: #333039;
+  --line-strong: #726F7B;
+  --line-campo: #726F7B;
+  --brand: #B9A3E4;
+  --brand-vivid: #B67CF0;
+  --brand-soft: #2E2340;
+  --on-brand: #130F1B;
+  --ok: #5FB77C;
+  --ok-soft: #132318;
+  --info: #5AAFD6;
+  --info-soft: #0F2530;
+  --warn: #D9A45E;
+  --warn-soft: #2A2013;
+  --pino-confirmado: #B67CF0;
+  --pino-duvida: #8E8B96;
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --sombra-2: 0 4px 16px rgba(0, 0, 0, .55);
+  --sombra-3: 0 12px 40px rgba(0, 0, 0, .65);
 }
 
 /* ------------------------------------------------------------- fundações */
@@ -221,7 +243,7 @@ button, input, select { font: inherit; color: inherit; }
   width: 100%; height: 40px;
   padding: 0 2.25rem 0 2.4rem;
   background: var(--surface);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-campo);
   border-radius: var(--r-full);
   font-size: var(--t-base);
   transition: border-color .15s, box-shadow .15s;
@@ -259,7 +281,7 @@ button, input, select { font: inherit; color: inherit; }
   display: inline-flex; align-items: center; gap: .35rem;
   height: 34px; padding: 0 .8rem;
   background: var(--surface); color: var(--ink-muted);
-  border: 1px solid var(--line-strong); border-radius: var(--r-full);
+  border: 1px solid var(--line-campo); border-radius: var(--r-full);
   font-size: var(--t-sm); font-weight: 600; white-space: nowrap;
   cursor: pointer; transition: background .15s, color .15s, border-color .15s;
 }
@@ -416,7 +438,7 @@ button, input, select { font: inherit; color: inherit; }
 .botao svg { width: 17px; height: 17px; }
 .botao--fantasma {
   background: transparent; color: var(--ink);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line-campo);
 }
 .botao--fantasma:hover { background: var(--surface-2); filter: none; }
 
@@ -630,4 +652,85 @@ button, input, select { font: inherit; color: inherit; }
     animation: none !important;
     transition-duration: .01ms !important;
   }
+}
+
+/* ------------------------------------------------- sugestões de zona */
+/* A caixa de procura é a mesma para sítios e para zonas, mas as zonas
+   aparecem numa lista à parte, por baixo: um concelho não é um resultado
+   como os outros — é um sítio para onde IR, e o mapa acompanha. */
+.sugestoes {
+  position: absolute; left: 0; right: 0; top: calc(100% + .4rem); z-index: 80;
+  list-style: none; margin: 0; padding: .3rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sombra-3);
+  max-height: 60vh; overflow-y: auto;
+}
+.sugestao {
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  gap: 0 .55rem; width: 100%; text-align: left;
+  padding: .5rem .6rem; border: 0; background: transparent;
+  border-radius: var(--r-sm); cursor: pointer;
+}
+.sugestao:hover, .sugestao:focus-visible { background: var(--brand-soft); }
+.sugestao svg { width: 17px; height: 17px; grid-row: span 2; color: var(--brand); }
+.sugestao__nome { font-weight: 650; font-size: var(--t-base); color: var(--ink); }
+.sugestao__sub { font-size: var(--t-xs); color: var(--ink-muted); }
+
+/* ------------------------------------------------- imagens do sítio */
+/* É isto que responde à pergunta «isto tem mesmo barras?». As duas primeiras
+   peças são ligações para o Google Maps — satélite e Street View — que são
+   grátis e não precisam de chave. As fotografias, quando existem, juntam-se
+   à frente. */
+.imagens {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 46%;
+  gap: .5rem; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding-bottom: .3rem; scrollbar-width: thin;
+}
+.imagem {
+  position: relative; scroll-snap-align: start;
+  aspect-ratio: 4 / 3; border-radius: var(--r-sm); overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--line);
+  text-decoration: none; display: block;
+}
+.imagem img { width: 100%; height: 100%; object-fit: cover; }
+.imagem--acao {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .4rem; color: var(--brand); font-size: var(--t-xs); font-weight: 650;
+  text-align: center; padding: .5rem;
+}
+.imagem--acao svg { width: 26px; height: 26px; }
+.imagem--acao:hover { background: var(--brand-soft); border-color: var(--brand); text-decoration: none; }
+
+.ficha__nota {
+  font-size: var(--t-xs); color: var(--ink-muted);
+  margin: .5rem 0 0; line-height: 1.5;
+}
+.ficha__fonte { font-size: var(--t-sm); color: var(--ink-muted); margin: 0; }
+
+/* Um sítio com barras confirmadas é o que a aplicação promete. Ganha uma
+   marca à esquerda para se distinguir sem se ter de ler a etiqueta. */
+.cartao--top { border-left: 3px solid var(--brand-vivid); }
+
+.lista-ap__nucleo { font-weight: 650; color: var(--ink); }
+.lista-ap__nucleo svg { color: var(--ok); }
+.lista-ap li:not(.lista-ap__nucleo) { color: var(--ink-muted); }
+.lista-ap li:not(.lista-ap__nucleo) svg { color: var(--ink-faint); }
+
+/* O botão de satélite, quando o condutor do mapa o suporta. */
+.icone-btn[aria-pressed="true"] {
+  background: var(--brand); color: var(--on-brand); border-color: var(--brand);
+}
+
+/* A ortofoto do sítio ocupa mais espaço que os botões: é a peça que responde
+   à pergunta «isto tem mesmo barras?». Os botões ficam ao lado, mais estreitos. */
+.imagens { grid-auto-columns: 38%; }
+.imagem--orto { grid-column: span 2; }
+.imagem--orto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.imagem__etiqueta {
+  position: absolute; left: 0; bottom: 0;
+  font-size: 10px; line-height: 1.6; padding: .1rem .4rem;
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  color: #fff; border-top-right-radius: var(--r-sm);
 }

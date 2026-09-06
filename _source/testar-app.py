@@ -51,7 +51,7 @@ def main():
     porta = 4600
     if '--porta' in sys.argv:
         porta = int(sys.argv[sys.argv.index('--porta') + 1])
-    base = f'http://localhost:{porta}'
+    base = f'http://localhost:{porta}/calisthenics-spots'
 
     c = cdp.Chrome(webgl=True)
     try:
@@ -64,6 +64,9 @@ def main():
                   esperar(c, "typeof estado!=='undefined' && estado.spots.length>0"),
                   'estado.spots ficou vazio')
         n = c.js('estado.spots.length')
+        # A vista por omissão exclui os circuitos SÓ DE MÁQUINAS: esta é uma
+        # aplicação de calistenia. É esse o número contra o qual se compara.
+        visiveis = c.js('estado.vistos.length')
         verificar('há sítios a mais de 700', n > 700, f'só {n}')
         verificar('todos os sítios têm nome',
                   c.js('estado.spots.every(s=>s.nome && s.nome.length>1)'))
@@ -77,12 +80,16 @@ def main():
                     return r.width>0 && r.height>0 &&
                       /OpenStreetMap/.test(e.textContent);})()"""))
 
+        # Uma sonda: cada condutor guarda os pontos à sua maneira, e a bateria
+        # não deve saber qual está a correr. Isto é o único sítio que sabe.
         print('\n— o mapa —')
-        verificar('o mapa monta as camadas',
-                  esperar(c, "estado.mapaPronto && !!estado.mapa.getSource('spots')"))
+        verificar('o mapa monta-se',
+                  esperar(c, "typeof Mapa!=='undefined' && Mapa.pronto"))
+        verificar('sem chave do Google, usa o condutor livre',
+                  c.js("Mapa.condutor") == ('google' if c.js("!!CONFIG.googleMapsKey") else 'livre'),
+                  c.js("Mapa.condutor"))
         verificar('o mapa acaba de desenhar',
-                  esperar(c, 'estado.mapa.loaded()', 40),
-                  'nunca ficou idle')
+                  esperar(c, "Mapa.condutor!=='livre' || document.querySelector('#mapa canvas')!==null", 40))
         verificar('o canvas tem o tamanho do contentor',
                   c.js("""(()=>{const c=document.querySelector('#mapa canvas'),
                     d=document.getElementById('mapa');
@@ -92,31 +99,19 @@ def main():
                   c.js("(()=>{const c=document.querySelector('#mapa canvas'),d=document.getElementById('mapa');"
                        "return c&&d? c.getBoundingClientRect().width+'x'+c.getBoundingClientRect().height"
                        "+' vs '+d.getBoundingClientRect().width+'x'+d.getBoundingClientRect().height : 'sem canvas'})()"))
-        verificar('o mapa tem os 798 pontos',
-                  c.js("estado.mapa.getSource('spots')._data.features.length")
-                  == c.js('estado.vistos.length'))
+        verificar('o mapa tem tantos pontos quantos a lista',
+                  c.js("Mapa._quantosPontos()") == c.js('estado.vistos.length'),
+                  f"{c.js('Mapa._quantosPontos()')} no mapa vs {c.js('estado.vistos.length')} na lista")
         verificar('a app não transborda o ecrã',
                   c.js('document.documentElement.scrollWidth <= window.innerWidth + 1'),
                   c.js("document.documentElement.scrollWidth+' > '+window.innerWidth"))
-        verificar('os sítios confirmados são os mais visíveis no mapa',
-                  c.js('''(()=>{const p=estado.mapa.getPaintProperty('pontos','circle-color');
-                    const j=JSON.stringify(p);
-                    // o laranja da marca tem de estar no escalão 1, e não no 3
-                    const i1=j.indexOf('1,"#E85D2A"')>=0 || /1,\s*"#E85D2A"/.test(j);
-                    return i1;})()'''),
-                  c.js("JSON.stringify(estado.mapa.getPaintProperty('pontos','circle-color'))"))
-        verificar('e também maiores que os por confirmar',
-                  c.js('''(()=>{const r=JSON.stringify(
-                    estado.mapa.getPaintProperty('pontos','circle-radius'));
-                    return /esc.*1.*8\.5/.test(r) || r.includes('8.5');})()'''))
-        verificar('há um fornecedor de mosaicos de reserva declarado',
-                  c.js("typeof ESTILO_RESERVA==='object' && !!ESTILO_RESERVA.light "
-                       "&& ESTILO_RESERVA.light!==ESTILO.light"))
-        verificar('os topónimos estão em português',
-                  c.js("""(()=>{const ls=estado.mapa.getStyle().layers.filter(
-                    l=>l.type==='symbol'&&l.layout&&l.layout['text-field']);
-                    if(!ls.length) return false;
-                    return ls.some(l=>JSON.stringify(l.layout['text-field']).includes('name:pt'));})()"""))
+        verificar('as cores dos pinos vêm do CSS, não estão escritas no JS',
+                  c.js("getComputedStyle(document.documentElement)"
+                       ".getPropertyValue('--pino-confirmado').trim().length>3"))
+        verificar('sem chave do Google, nao ha botao de satelite a fingir',
+                  c.js("document.getElementById('satelite').hidden") is True
+                  or bool(c.js('!!CONFIG.googleMapsKey')),
+                  'o botao so existe quando o mapa o sabe fazer')
 
         print('\n— a lista —')
         verificar('a lista começa com um lote e não com tudo',
@@ -142,7 +137,7 @@ def main():
              q.value='lisboa'; q.dispatchEvent(new Event('input',{bubbles:true}));})()""")
         time.sleep(0.5)
         nl = c.js('estado.vistos.length')
-        verificar('procurar «lisboa» reduz a lista', 0 < nl < n, f'deu {nl}')
+        verificar('procurar «lisboa» reduz a lista', 0 < nl < visiveis, f'deu {nl}')
         primeiros = c.js("estado.vistos.slice(0,5).map(s=>s.con).join(', ')")
         n_lisboa = c.js("estado.vistos.filter(s=>s.con==='Lisboa').length")
         verificar('procurar «lisboa» põe Lisboa em primeiro, não Cascais',
@@ -168,8 +163,7 @@ def main():
         c.js("""(()=>{const q=document.getElementById('q');
              q.value='lisboa'; q.dispatchEvent(new Event('input',{bubbles:true}));})()""")
         time.sleep(0.4)
-        verificar('o mapa acompanha a procura',
-                  c.js("estado.mapa.getSource('spots')._data.features.length") == nl)
+        verificar('o mapa acompanha a procura', c.js("Mapa._quantosPontos()") == nl)
 
         # acentos: quem escreve sem acento tem de encontrar
         for termo, esperado in (('evora', 'Évora'), ('agueda', 'Águeda'), ('setubal', 'Setúbal')):
@@ -189,7 +183,46 @@ def main():
                   c.js("!document.getElementById('limpar').hidden"))
         c.js("document.getElementById('limpar').click()")
         time.sleep(0.4)
-        verificar('limpar repõe a lista toda', c.js('estado.vistos.length') == n)
+        verificar('limpar repõe a lista toda', c.js('estado.vistos.length') == visiveis)
+        verificar('os circuitos só de máquinas ficam de fora por omissão',
+                  visiveis < n and c.js('estado.vistos.every(s=>s.esc!==4)'),
+                  f'{n - visiveis} escondidos')
+
+        print('\n— pesquisa por zona —')
+        c.js("(()=>{const q=document.getElementById('q');"
+             "q.value='Viana do Castelo';"
+             "q.dispatchEvent(new Event('input',{bubbles:true}));})()")
+        time.sleep(1.2)
+        primeira = c.js("(()=>{const b=document.querySelector('.sugestao');"
+                        "return b? b.querySelector('.sugestao__nome').textContent : null;})()")
+        # A ARMADILHA: «Viana do Castelo» tem ZERO sitios. Numa primeira versao
+        # so os concelhos COM sitios entravam no indice, e a procura caia em
+        # «Caminha» — que casa pela palavra do distrito — sem dizer nada.
+        verificar('procurar um concelho sem sitios encontra-o na mesma',
+                  primeira == 'Viana do Castelo', str(primeira))
+        c.js("document.querySelector('.sugestao').click()")
+        time.sleep(2.0)
+        verificar('o mapa vai para la e assinala a zona',
+                  c.js('!!(estado.zonaActiva && estado.zonaActiva.n)'),
+                  str(c.js('estado.zonaActiva && estado.zonaActiva.n')))
+        verificar('e diz honestamente que ali nao ha nada',
+                  c.js("/Ainda n.o h. nada/.test(document.getElementById('lista').textContent)"),
+                  c.js("document.getElementById('lista').textContent.slice(0,60)"))
+        # e um concelho COM sitios continua a funcionar
+        c.js("(()=>{const q=document.getElementById('q');"
+             "q.value='Cascais'; q.dispatchEvent(new Event('input',{bubbles:true}));})()")
+        time.sleep(1.2)
+        c.js("document.querySelector('.sugestao').click()")
+        time.sleep(2.0)
+        n_cascais = c.js('estado.vistos.length')
+        verificar('escolher Cascais filtra a lista para Cascais',
+                  n_cascais > 5 and c.js("estado.vistos.every(s=>s.con==='Cascais')"),
+                  f'{n_cascais} resultados')
+        verificar('e o contorno do concelho foi buscado a parte',
+                  c.js('contornosEmCache.size >= 1'),
+                  str(c.js('contornosEmCache.size')))
+        c.js("document.getElementById('limpar').click()")
+        time.sleep(0.5)
 
         print('\n— os filtros —')
         c.js("document.getElementById('f-barras').click()")
@@ -205,7 +238,13 @@ def main():
                   c.js('estado.vistos.every(s=>s.esc===1 && s.h24)'))
         c.js("document.getElementById('f-barras').click();document.getElementById('f-24').click()")
         time.sleep(0.4)
-        verificar('desligar os filtros repõe tudo', c.js('estado.vistos.length') == n)
+        verificar('desligar os filtros repõe tudo', c.js('estado.vistos.length') == visiveis)
+        c.js("document.getElementById('f-maquinas').click()")
+        time.sleep(0.4)
+        verificar('e o filtro das máquinas traz os que faltavam',
+                  c.js('estado.vistos.length') == n, f"{c.js('estado.vistos.length')} vs {n}")
+        c.js("document.getElementById('f-maquinas').click()")
+        time.sleep(0.3)
 
         print('\n— a ficha —')
         c.js("document.querySelector('.cartao').click()")
@@ -220,6 +259,23 @@ def main():
                       && !document.querySelector('#ficha iframe');})()"""))
         verificar('a ficha diz honestamente o que se sabe do equipamento',
                   c.js("/indica|sabemos|máquinas/i.test(document.getElementById('ficha-corpo').textContent)"))
+        # A ORTOFOTO. E a peca que responde a «isto tem mesmo barras?», e o
+        # servidor da DGT tem um defeito de CORS que a impede de entrar no
+        # mapa — por isso entra aqui, como imagem. Se deixar de responder, o
+        # cartao fica sem ela e ninguem da por isso: dai o teste.
+        orto = c.js("(()=>{const i=document.querySelector('.imagem--orto img');"
+                    "return i? i.src : null;})()")
+        verificar('a ficha traz a vista aerea do sitio',
+                  bool(orto) and 'dgterritorio' in (orto or ''), str(orto)[:60])
+        if orto:
+            import urllib.request
+            try:
+                b = len(urllib.request.urlopen(urllib.request.Request(
+                    orto, headers={'User-Agent': 'CalisthenicsSpots-teste/1.0'}),
+                    timeout=45).read())
+            except Exception:
+                b = -1
+            verificar('e a ortofoto que vem tem mesmo imagem', b > 8000, f'{b} bytes')
         verificar('a ficha diz de que fonte vem o sítio',
                   c.js("/OpenStreetMap|Câmara Municipal/.test("
                        "document.getElementById('ficha-corpo').textContent)"))
@@ -302,7 +358,9 @@ def main():
         verificar('sem WebGL, a lista desenha-se na mesma',
                   c.js("document.querySelectorAll('.cartao').length>0"))
         verificar('sem WebGL, diz-se porquê em vez de ficar uma caixa cinzenta',
-                  c.js("/WebGL|não carregou/.test(document.getElementById('mapa-carregar').textContent)"))
+                  c.js("/WebGL|não conseguiu|não carregou/"
+                       ".test(document.getElementById('mapa-carregar').textContent)"),
+                  c.js("document.getElementById('mapa-carregar').textContent"))
         verificar('sem WebGL, o separador «Mapa» desaparece',
                   c.js("document.getElementById('v-mapa').hidden"))
         verificar('sem WebGL, a ficha continua a abrir',

@@ -34,6 +34,14 @@ area["ISO3166-1"="PT"][admin_level=2]->.pt;
   nwr["sport"~"calisthenics"](area.pt);
   nwr["leisure"="fitness_centre"]["outdoor"="yes"](area.pt);
   nwr["playground"="exercise"](area.pt);
+//
+//   playground=horizontal_bar e companhia — uma barra fixa num parque infantil
+//     continua a ser uma barra fixa, e no mundo esta etiqueta é MAIS usada do
+//     que `fitness_station=horizontal_bar` (5041 contra 4582).
+//     `climbingframe` NÃO está aqui, e foi tentado: trouxe 25 estruturas de
+//     escalada para crianças, sem nome e sem mais nada — que não são sítios
+//     para fazer elevações e enchiam a lista de ruído.
+  nwr["playground"~"^(horizontal_bar|monkey_bars|parallel_bars|ladder)$"](area.pt);
 );
 out center tags;
 ---

@@ -1,42 +1,42 @@
 <!doctype html>
-<html lang="pt-PT">
+<html lang="pt-PT" data-base="/calisthenics-spots/">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Barra Fixe — barras de rua para calistenia em Portugal</title>
-<meta name="description" content="O mapa das barras de rua em Portugal. 833 parques e espaços com barras de elevações, paralelas e argolas, em 178 concelhos. Grátis, sem conta e sem publicidade.">
-<link rel="canonical" href="https://barrafixe.pt/">
-<meta name="theme-color" content="#F5F3EE" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14161A" media="(prefers-color-scheme: dark)">
+<title>Calisthenics Spots — onde treinar calistenia ao ar livre em Portugal</title>
+<meta name="description" content="Encontra barras para elevações, paralelas e argolas ao ar livre em Portugal. 845 locais em 175 concelhos, 77 com barras confirmadas. Grátis, sem conta e sem publicidade.">
+<link rel="canonical" href="https://renatovalente5.github.io/calisthenics-spots/">
+<meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#110F15" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Barra Fixe">
+<meta property="og:site_name" content="Calisthenics Spots">
 <meta property="og:locale" content="pt_PT">
-<meta property="og:title" content="Barra Fixe — barras de rua para calistenia em Portugal">
-<meta property="og:description" content="833 sítios com barras ao ar livre, em 178 concelhos. Encontra o mais perto de ti.">
-<meta property="og:url" content="https://barrafixe.pt/">
-<meta property="og:image" content="https://barrafixe.pt/assets/img/og.png">
+<meta property="og:title" content="Calisthenics Spots — onde treinar calistenia ao ar livre em Portugal">
+<meta property="og:description" content="845 locais de treino ao ar livre em 175 concelhos. Encontra as barras mais perto de ti.">
+<meta property="og:url" content="https://renatovalente5.github.io/calisthenics-spots/">
+<meta property="og:image" content="https://renatovalente5.github.io/calisthenics-spots/assets/img/og.png">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="icon" href="/assets/img/pino.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/calisthenics-spots/assets/img/pino.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/calisthenics-spots/assets/img/apple-touch-icon.png">
+<link rel="manifest" href="/calisthenics-spots/manifest.webmanifest">
 
-<link rel="preload" href="/data/spots.json" as="fetch" type="application/json" crossorigin>
-<link rel="stylesheet" href="/assets/css/app.css?v=d3f1692d">
+<link rel="preload" href="/calisthenics-spots/data/spots.json" as="fetch" type="application/json" crossorigin>
+<link rel="stylesheet" href="/calisthenics-spots/assets/css/app.css?v=780ef572">
 <!-- O MapLibre é ALOJADO AQUI, não vem de um CDN. Duas razões, e a segunda é
      a que manda: (1) um CDN é mais um servidor a quem o browser de quem nos
      visita entrega o seu IP, e este site não entrega o IP de ninguém a mais
      ninguém sem ser preciso; (2) o CSS não pode chegar depois do JS — se
      chegar, a biblioteca mede o contentor sem dimensões e fica com um mapa de
      195x300 dentro de uma caixa de 845x609. Local, chega sempre primeiro. -->
-<link rel="stylesheet" href="/assets/vendor/maplibre-gl.css?v=d3f1692d">
+<link rel="stylesheet" href="/calisthenics-spots/assets/vendor/maplibre-gl.css?v=780ef572">
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"Barra Fixe",
-"url":"https://barrafixe.pt/","inLanguage":"pt-PT",
-"description":"Mapa dos parques e espaços com barras de rua para calistenia em Portugal.",
+{"@context":"https://schema.org","@type":"WebSite","name":"Calisthenics Spots",
+"url":"https://renatovalente5.github.io/calisthenics-spots/","inLanguage":"pt-PT",
+"description":"Mapa dos locais para treinar calistenia ao ar livre em Portugal: barras de elevações, paralelas e argolas.",
 "license":"https://opendatacommons.org/licenses/odbl/1-0/"}
 </script>
 </head>
@@ -44,22 +44,26 @@
 <a class="saltar" href="#lista">Saltar para a lista de sítios</a>
 
 <header class="topo">
-  <a class="marca" href="/" aria-label="Barra Fixe, página inicial">
+  <a class="marca" href="/calisthenics-spots/" aria-label="Calisthenics Spots, página inicial">
     <svg class="marca__pino" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" fill-rule="evenodd" d="M12 1.6c-4.7 0-8.5 3.8-8.5 8.5 0 6.2 8.5 12.3 8.5 12.3s8.5-6.1 8.5-12.3c0-4.7-3.8-8.5-8.5-8.5zM7.6 7.4H16.4V15.6H14.3V9.3H9.7V15.6H7.6Z"/>
     </svg>
-    <span class="marca__nome">Barra <b>Fixe</b></span>
+    <span class="marca__nome">Calisthenics <b>Spots</b></span>
   </a>
 
   <div class="procura">
     <svg class="procura__lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input class="procura__campo" id="q" type="search" autocomplete="off"
-           placeholder="Procura um sítio, concelho ou distrito…"
+           placeholder="Procura uma zona, cidade ou parque…"
            aria-label="Procurar por nome, concelho ou distrito"
            enterkeyhint="search" spellcheck="false">
     <button class="procura__limpar" id="limpar" type="button" hidden aria-label="Limpar a procura">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
+    <!-- As zonas. Escrever «Viana do Castelo» tem de assinalar o concelho no
+         mapa, e não só filtrar uma lista: quem procura uma zona quer olhar à
+         volta. Os contornos vêm da CAOP e só se carregam à primeira letra. -->
+    <ul class="sugestoes" id="sugestoes" hidden aria-label="Zonas"></ul>
   </div>
 
   <button class="icone-btn" id="tema" type="button" aria-label="Mudar entre tema claro e escuro">
@@ -84,6 +88,11 @@
   <button class="chip" id="f-acess" type="button" aria-pressed="false">
     Acessível <span class="chip__n" id="n-acess"></span>
   </button>
+  <!-- Desligado por omissão. Isto é uma aplicação de calistenia; os circuitos
+       de máquinas guiadas para seniores ficam de fora até alguém os pedir. -->
+  <button class="chip" id="f-maquinas" type="button" aria-pressed="false">
+    Incluir circuitos de máquinas <span class="chip__n" id="n-maquinas"></span>
+  </button>
 </nav>
 
 <!-- A nota da localização aparece ANTES de o browser perguntar seja o que for.
@@ -93,7 +102,7 @@
 <p class="nota-local" id="nota-local">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.4"/></svg>
   A tua localização fica no teu aparelho e nunca é enviada para lado nenhum.
-  <a href="/privacidade/">Como funciona</a>
+  <a href="/calisthenics-spots/privacidade/">Como funciona</a>
 </p>
 
 <main class="app" id="app" data-vista="lista">
@@ -105,9 +114,9 @@
     <div class="painel__rolar">
     <ul class="lista" id="lista"></ul>
     <nav class="painel__pe" aria-label="Ligações do site">
-      <a href="/sobre/">Como isto funciona</a>
-      <a href="/contribuir/">Falta um sítio?</a>
-      <a href="/privacidade/">Privacidade</a>
+      <a href="/calisthenics-spots/sobre/">Como isto funciona</a>
+      <a href="/calisthenics-spots/contribuir/">Falta um sítio?</a>
+      <a href="/calisthenics-spots/privacidade/">Privacidade</a>
     </nav>
     </div>
   </section>
@@ -118,6 +127,9 @@
     <div class="mapa__acoes">
       <button class="icone-btn" id="localizar" type="button" aria-label="Centrar o mapa onde estou">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
+      </button>
+      <button class="icone-btn" id="satelite" type="button" hidden aria-pressed="false" aria-label="Alternar vista de satélite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/><circle cx="12" cy="12" r="9.5"/></svg>
       </button>
       <button class="icone-btn" id="todo-pais" type="button" aria-label="Ver Portugal inteiro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg>
@@ -148,7 +160,9 @@
 
 <p class="oculto-visual" role="status" aria-live="polite" id="anuncio"></p>
 
-<script src="/assets/vendor/maplibre-gl.js?v=d3f1692d" defer></script>
-<script src="/assets/js/app.js?v=d3f1692d" defer></script>
+<script src="/calisthenics-spots/assets/vendor/maplibre-gl.js?v=780ef572" defer></script>
+<script src="/calisthenics-spots/assets/js/config.js?v=780ef572" defer></script>
+<script src="/calisthenics-spots/assets/js/mapa.js?v=780ef572" defer></script>
+<script src="/calisthenics-spots/assets/js/app.js?v=780ef572" defer></script>
 </body>
 </html>

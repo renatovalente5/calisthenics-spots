@@ -1,4 +1,4 @@
-/* Barra Fixe — service worker.
+/* Calisthenics Spots — service worker.
    ============================================================================
    PARA QUE SERVE: estar no parque, com 4G mau, e o site abrir na mesma.
 
@@ -20,17 +20,19 @@
         vêm como respostas opacas: guardá-los enche a quota sem se poder sequer
         verificar se são válidos. Ficam de fora, e o browser trata deles.
 */
-const VERSAO = 'd3f1692d';
-const CACHE = 'barrafixe-' + VERSAO;
+const VERSAO = '780ef572';
+const BASE = '/calisthenics-spots/';
+const CACHE = 'calisthenics-spots-' + VERSAO;
 
 const ESSENCIAL = [
-  '/',
-  '/assets/css/app.css?v=' + VERSAO,
-  '/assets/js/app.js?v=' + VERSAO,
-  '/assets/vendor/maplibre-gl.js?v=' + VERSAO,
-  '/assets/vendor/maplibre-gl.css?v=' + VERSAO,
-  '/data/spots.json',
-  '/assets/img/pino.svg',
+  BASE,
+  BASE + 'assets/css/app.css?v=' + VERSAO,
+  BASE + 'assets/js/app.js?v=' + VERSAO,
+  BASE + 'assets/vendor/maplibre-gl.js?v=' + VERSAO,
+  BASE + 'assets/vendor/maplibre-gl.css?v=' + VERSAO,
+  BASE + 'data/spots.json',
+  BASE + 'data/concelhos.json',
+  BASE + 'assets/img/pino.svg',
 ];
 
 self.addEventListener('install', ev => {
@@ -46,7 +48,7 @@ self.addEventListener('install', ev => {
 self.addEventListener('activate', ev => {
   ev.waitUntil((async () => {
     for (const n of await caches.keys()) {
-      if (n.startsWith('barrafixe-') && n !== CACHE) await caches.delete(n);
+      if (n.startsWith('calisthenics-spots-') && n !== CACHE) await caches.delete(n);
     }
     await self.clients.claim();
   })());
@@ -73,10 +75,10 @@ self.addEventListener('fetch', ev => {
           new Promise((_, rej) => setTimeout(() => rej(new Error('lento')), 3000)),
         ]);
         const c = await caches.open(CACHE);
-        c.put('/', r.clone());
+        c.put(BASE, r.clone());
         return r;
       } catch (e) {
-        return (await caches.match('/')) ||
+        return (await caches.match(BASE)) ||
           new Response('<!doctype html><meta charset=utf-8>' +
             '<p style="font:16px system-ui;padding:2rem">Sem ligação, e ainda não ' +
             'há uma cópia guardada deste site. Tenta outra vez com rede.</p>',
@@ -100,8 +102,8 @@ self.addEventListener('fetch', ev => {
     } catch (e) {
       // O ficheiro dos sítios é o que interessa mesmo ter offline: se o pedido
       // trouxer uma query diferente, ainda assim serve-se a cópia que há.
-      if (url.pathname === '/data/spots.json') {
-        const alt = await caches.match('/data/spots.json');
+      if (url.pathname === BASE + 'data/spots.json') {
+        const alt = await caches.match(BASE + 'data/spots.json');
         if (alt) return alt;
       }
       throw e;

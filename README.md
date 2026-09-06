@@ -1,180 +1,244 @@
-# Barra Fixe
+# Calisthenics Spots
 
-**O mapa das barras de rua em Portugal.** 833 parques e espaços com barras de
-elevações, paralelas, argolas e espaldares, em 178 concelhos — com o que se sabe
-de cada um, e com o que ainda não se sabe dito à frente.
+**Onde treinar calistenia ao ar livre em Portugal.** Barras de elevações,
+paralelas, argolas e espaldares — em parques, jardins e passeios públicos, com o
+que se sabe de cada sítio e com o que ainda não se sabe dito à frente.
 
-→ **[barrafixe.pt](https://barrafixe.pt)**
-
-*Barra fixa* é o nome do aparelho. *Fixe* é como se diz «bom» em Portugal.
+→ **[calisthenics-spots.pt](https://calisthenics-spots.pt)** *(domínio por comprar;
+por agora em [renatovalente5.github.io/calisthenics-spots](https://renatovalente5.github.io/calisthenics-spots/))*
 
 ---
 
-## O problema que isto resolve
+## O problema
 
-Existem mapas internacionais de calistenia. Todos têm o mesmo defeito, e vem da
-mesma raiz: **o OpenStreetMap não regista parques de calistenia — regista
-aparelhos**, um ponto por máquina, quase sempre sem dizer que máquina é.
+Isto é uma aplicação de **calistenia**: sítios com barras onde se suporta o peso
+do corpo. Não é um directório de circuitos de máquinas guiadas para seniores —
+bicicletas estáticas, elípticas, volantes de ombros. E é aí que está a
+dificuldade, porque **as duas coisas partilham a mesma etiqueta no mapa**.
 
-Em Portugal são 1477 pontos com `leisure=fitness_station`. Desses:
+O OpenStreetMap não regista parques de calistenia: regista **aparelhos**, um
+ponto por máquina, quase sempre sem dizer que máquina é. Em Portugal são ~1500
+pontos com `leisure=fitness_station`. Desses, só ~140 têm nome — e o nome é o do
+aparelho («Abdominais», «Flexões de Braços»), não o do sítio.
 
-- só **140** têm nome, e o nome é o do aparelho («Abdominais», «Flexões de Braços»);
-- só **~60** dizem que aparelho são;
-- **562** são um ponto solitário, sem nome nem descrição.
+**Medido:** quando o OSM diz o que lá está, **57 % têm barras**. Nos outros
+87,5 %, não se sabe. Não é que a maioria seja ginásio de máquinas — é que a
+maioria é desconhecida.
 
-Quem despeja isto tal e qual num site fica com resultados como
-`Outdoor Gym - Tver - Tver - C…` e chama «Calisthenics Park» a um circuito de
-bicicletas estáticas para seniores. Este projecto faz três coisas em vez disso.
+## O que este projecto faz
 
-### 1. Agrupar — um sítio não é um aparelho
+### 1. Junta as fontes que sabem mesmo o que lá está
 
-Os aparelhos a menos de **75 metros** uns dos outros são o mesmo sítio.
-O raio não é um palpite: a distância de cada aparelho ao vizinho mais próximo é
-bimodal — metade tem um irmão a menos de 51 m, e a partir do percentil 60 salta
-para centenas de metros. 75 m fica no vale, do lado conservador.
+| Fonte | O que dá | Licença |
+|---|---|---|
+| **OpenStreetMap** | Cobertura de todo o país | ODbL |
+| **Câmara de Cascais** | Uma coluna por aparelho: `barra_elevacao`, `barra_paralela`, `espaldar`, `argola` | CC-BY |
+| **Câmara de Oeiras** | Cada aparelho à parte, com o nome: «Pull Up», «Dip Bars» | CC-BY |
+| **Câmara de Lisboa** | 67 equipamentos com o nome municipal | CC0 |
+| **CAOP (DGT)** | Concelho, distrito e região, por ponto-em-polígono, offline | — |
+
+Os conjuntos das câmaras são descobertos pela API do
+[dados.gov.pt](https://dados.gov.pt/) e não por URLs escritos à mão — o ficheiro
+de Cascais tem a data no nome e mudaria sozinho dentro de um mês.
+
+**Oeiras publica em EPSG:3763** (ETRS89 / PT-TM06), em metros. A conversão
+inversa de Transversa de Mercator está escrita à mão em `fontes-municipais.py`,
+porque o projecto não tem dependências. Sem ela, 87 sítios apareciam a sul da
+Antárctida — e há uma guarda que recusa uma fonte inteira se algum ponto sair de
+Portugal.
+
+### 2. Agrupa — um sítio não é um aparelho
+
+Aparelhos a menos de **75 m** são o mesmo sítio. O raio saiu dos dados: a
+distância ao vizinho mais próximo é bimodal, com metade a menos de 51 m e um
+salto para centenas de metros a partir do percentil 60.
 
 ```
 p25 = 12 m   p50 = 51 m  │  p60 = 202 m   p70 = 581 m
 ── mesmo parque ─────────┴── parques diferentes ──
 ```
 
-Segue-se uma segunda passagem que funde zonas do **mesmo parque com nome** a
-menos de 250 m — mas só as com nome, para o Parque do Calhau (400 ha, em
-Monsanto) não colapsar as suas zonas distantes num ponto só.
+Segunda passagem: funde zonas do **mesmo parque com nome** a menos de 250 m — só
+as com nome, para o Parque do Calhau (400 ha, Monsanto) não colapsar num ponto.
 
-**1477 aparelhos → 13 recusados → 847 grupos → 795 sítios → 833 com Lisboa.**
+### 3. Nomeia a partir do LUGAR
 
-### 2. Nomear — o nome vem do lugar, não da máquina
+Por ordem: o nome municipal (é o que está na placa), o parque ou jardim que
+contém o sítio, ou a localidade. Nunca o nome do aparelho — senão cinco sítios
+chamavam-se «Abdominais».
 
-Por ordem: o parque ou jardim que contém o sítio (*Jardim do Torel*), o mesmo a
-menos de 120 m, ou a localidade (*Zambujeira do Mar*). A linha de morada junta a
-rua mais próxima, a localidade, o concelho e o distrito.
+### 4. Classifica, e diz o que não sabe
 
-Concelho, distrito e região saem da **CAOP** (Carta Administrativa Oficial de
-Portugal, DGT) por ponto-em-polígono, offline. Sem geocodificação, sem API,
-sem limites de pedidos.
+| Escalão | O que significa | Por omissão |
+|---|---|---|
+| **Barras confirmadas** | Barra fixa, paralelas, argolas, espaldar ou escada horizontal | visível |
+| **Peso corporal** | Equipamento de peso corporal, sem barra nomeada | visível |
+| **Por confirmar** | Há equipamento; não se sabe qual | visível |
+| **Só máquinas** | Máquinas guiadas — o circuito para seniores | **escondido** |
 
-Em Lisboa entra uma segunda fonte: os **Equipamentos de Fitness** da Câmara
-Municipal de Lisboa (Lisboa Aberta, **CC0**). 67 pontos que acrescentam 38
-sítios ausentes do OSM e emprestam o nome municipal a outros — mas só depois de
-lhes tirar o prefixo `Fitness ` do conjunto de dados, que transformava
-«Jardim do Torel» em «Fitness Jardim do Torel».
+**Não se filtra pelo NOME.** É a heurística mais tentadora e a mais errada:
+verificado nos dois sentidos — os «Circuitos de Manutenção» de Cascais têm barra
+fixa, paralelas e espaldar; outros com o mesmo nome só têm máquinas. Só o
+equipamento distingue.
 
-### 3. Classificar — dizer o que se sabe, e o que não se sabe
+### 5. Deixa ver o sítio antes de lá ir
 
-| Escalão | Sítios | Significa |
-|---|---:|---|
-| Barras confirmadas | 56 | O OSM indica barra fixa, paralelas, argolas, espaldar ou escada horizontal |
-| Peso corporal | 27 | Equipamento de peso corporal, sem barra nomeada |
-| Por confirmar | 744 | Há equipamento; não se sabe qual |
-| Só máquinas | 6 | Só máquinas guiadas — sem barras |
+Três formas, todas gratuitas e sem chave nenhuma:
 
-**89 % dos sítios estão por confirmar, e o site diz isso.** É a diferença entre
-este mapa e os outros — e é o motor da comunidade: quem lá for, confirma, e a
-confirmação vai para o OpenStreetMap, não fica aqui.
+- **Vista aérea na própria ficha** — as **ortofotos oficiais da Direção-Geral
+  do Território** (CC-BY), ~25 cm/px, centradas no ponto. Vê-se o pórtico das
+  barras.
+- **Street View** — ligação para o Google Maps ao nível do chão.
+- **Fotos de rua** — Mapillary e Panoramax, fotografia aberta.
 
----
+A ortofoto vem como `<img>` e não como camada do mapa, e não foi escolha:
+o servidor da DGT manda `Access-Control-Allow-Origin` **duas vezes**, e a
+especificação do CORS exige exactamente um. Medido nos três modos — `fetch`
+falha, `<img crossOrigin>` falha, `<img>` simples funciona. O MapLibre precisa
+de CORS para as texturas de WebGL; uma imagem numa ficha não precisa. Satélite
+*dentro* do mapa só com uma chave do Google.
 
 ## Arquitectura
 
 Ficheiros estáticos no GitHub Pages. Sem servidor, sem base de dados, sem npm,
-sem passo de compilação para o site — e **sem custo recorrente nenhum**.
+sem passo de compilação para o site — e **sem custo recorrente**.
 
 | Peça | Escolha | Porquê |
 |---|---|---|
 | Mapa | **MapLibre GL JS**, alojado aqui | Sem chave, sem CDN, sem terceiros a ver o IP de quem visita |
-| Mosaicos | **OpenFreeMap** | Sem chave, sem conta, sem limite. O URL do estilo é uma constante — troca-se numa linha |
-| Navegação | **Ligação** para o Google Maps / Apple Maps | Grátis e sem chave. Um *iframe* do Google arrastaria cookies e obrigaria a banner de consentimento |
-| Dados | 265 KB de JSON, carregados de uma vez | 833 sítios cabem na memória; filtrar e ordenar é instantâneo e não precisa de servidor |
-| Tipografia | Pilha do sistema | Zero pedidos à rede, zero cookies de terceiros |
+| Mosaicos | **OpenFreeMap**, com **VersaTiles** de reserva | Sem chave, sem limite; o URL está numa constante |
+| Vista aérea | **Ortofotos da DGT** (WMS, CC-BY) | Oficial, portuguesa, aberta, sem cookies |
+| Navegação | **Ligação** para o Google/Apple Maps | Grátis, sem chave. Um *iframe* do Google arrastaria cookies e obrigaria a banner |
+| Dados | ~275 KB de JSON de uma vez | Cabe na memória; filtrar é instantâneo |
+| Zonas | índice dos 308 concelhos (11 KB) + um contorno por concelho (~1 KB) | O índice enquadra o mapa no instante do clique; o contorno chega a seguir |
 
-**O Google Maps JavaScript API foi deliberadamente rejeitado**: exige chave com
-conta de facturação, e uma chave numa página estática é pública. «Custo zero»
-não pode depender de ninguém se portar bem.
+### Sobre o Google Maps
+
+O condutor do Google **está escrito e pronto** em `assets/js/mapa.js`: basta pôr
+uma chave em `assets/js/config.js`. Mas leia-se o que lá está antes, porque a
+troca é real:
+
+- uma chave de produção **exige cartão** — sem conta de facturação a Google
+  devolve um mapa escurecido com «for development purposes only»;
+- **não existe tecto diário**. A documentação da Maps JS API só define quotas
+  por minuto, e os orçamentos do Cloud Billing só enviam email. São 10 000
+  carregamentos grátis por mês e 7 USD por cada 1000 acima disso;
+- **o Google Maps põe cookies**, e este site hoje não põe nenhum. Activá-lo
+  obriga a banner de consentimento.
+
+Há uma [Demo Key](https://developers.google.com/maps/demo-key) sem cartão, para
+experimentar. E se a chave falhar ou esgotar a quota, o `gm_authFailure` devolve
+o site ao mapa livre em vez de deixar um rectângulo cinzento.
 
 ## Como se constrói
 
 ```bash
-python3 _source/recolher.py          # OpenStreetMap + CAOP -> _source/bruto/
-python3 _source/gerar-spots.py       # agrupa, nomeia, classifica -> data/spots.json
-python3 _source/recolher.py --ruas   # as ruas de cada sítio (lento, opcional)
-python3 _source/gerar-paginas.py     # páginas + sw.js, com os números dos dados
-python3 _source/gerar-imagens.py     # ícones e imagem social, desenhados em Chrome
+python3 _source/recolher.py           # OpenStreetMap + CAOP -> _source/bruto/
+python3 _source/fontes-municipais.py  # Lisboa, Cascais, Oeiras (via dados.gov.pt)
+python3 _source/gerar-spots.py        # agrupa, nomeia, classifica -> data/spots.json
+python3 _source/recolher.py --ruas    # as ruas de cada sítio (lento, opcional)
+python3 _source/gerar-zonas.py        # concelhos -> data/concelhos.json + data/limites/
+python3 _source/gerar-paginas.py      # páginas + sw.js + manifesto
+python3 _source/gerar-imagens.py      # ícones e imagem social, desenhados em Chrome
 ```
 
-Nada é escrito à mão duas vezes: os números das páginas («833 sítios») vêm de
+Nada é escrito à mão duas vezes: os números das páginas vêm de
 `data/spots.json`, e a construção **morre** se um marcador ficar por substituir.
-A versão do `?v=` e da cache do service worker é um resumo do próprio conteúdo —
-não há números a incrementar à mão.
+A versão do `?v=` e da cache do service worker é um resumo do próprio conteúdo.
 
 ## Como se testa
 
 ```bash
-python3 _source/testar-dados.py      # guardas sobre data/spots.json
-python3 _source/testar-app.py        # CONDUZ a aplicação num Chrome a sério
-python3 _source/capturar.py          # capturas de ecrã verdadeiras
+python3 _source/servidor.py           # serve em /calisthenics-spots/, como o Pages
+python3 _source/testar-dados.py       # guardas sobre data/spots.json
+python3 _source/testar-ligacoes.py    # nenhuma ligação interna morta
+python3 _source/testar-app.py         # CONDUZ a aplicação num Chrome a sério
+python3 _source/capturar.py           # capturas de ecrã verdadeiras
 ```
 
+O servidor local **não** é um `python3 -m http.server`. Sem domínio próprio o
+GitHub Pages serve o site em `/calisthenics-spots/`, e é esse o prefixo que a
+construção escreve nos caminhos; servir a pasta na raiz dava 200 onde a produção
+dá 404.
+
 `testar-app.py` carrega em botões, escreve na caixa de procura, arrasta a lista
-até ao fim e verifica a geometria no ecrã — porque um mapa que nunca desenha,
-uma lista que fica nos primeiros 40 resultados ou um canvas de 195×300 dentro de
-uma caixa de 845×609 não dão erro nenhum na consola.
+até ao fim e mede a geometria no ecrã. Corre também **sem WebGL**, a fingir que
+o browser não o suporta, para garantir que a lista se aguenta sozinha.
 
-Corre também **sem WebGL**, a fingir que o browser não o suporta, para garantir
-que a lista se aguenta sozinha.
+## O domínio
 
-## Licenças
+Enquanto `calisthenics-spots.pt` não estiver comprado, o site vive em
+`/calisthenics-spots/`. Isso é **derivado**: a construção procura um ficheiro
+`CNAME` na raiz e, se o encontrar, passa a BASE a `/`.
 
-O **código** está sob MIT. Os **dados não**.
+```bash
+cp _source/CNAME-quando-o-dominio-existir CNAME
+python3 _source/gerar-paginas.py
+```
 
-`data/spots.json` é uma base de dados derivada do OpenStreetMap e está sob a
-**[ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/)** — texto completo
-em [`LICENSE-DADOS.txt`](LICENSE-DADOS.txt). Quem o usar tem de atribuir
-**© contribuidores do OpenStreetMap** e manter obras derivadas sob ODbL.
-A atribuição viaja dentro do próprio ficheiro, no bloco `meta`.
-
-Complemento em Lisboa: **Câmara Municipal de Lisboa**, Equipamentos de Fitness, CC0.
-Limites administrativos: **CAOP**, Direção-Geral do Território.
-Mosaicos: **OpenFreeMap** + **OpenMapTiles**.
-`assets/vendor/maplibre-gl.*`: **MapLibre GL JS**, BSD-3-Clause.
-
-Precisas dos dados? Leva o ficheiro em vez de rastejar o site:
-<https://barrafixe.pt/data/spots.json>
+E nos DNS: quatro registos A para `185.199.108.153`, `.109.153`, `.110.153`,
+`.111.153`, mais um CNAME de `www` para `renatovalente5.github.io`. Depois, em
+*Settings → Pages*, ligar **Enforce HTTPS**.
 
 ## As armadilhas conhecidas
 
 Escritas aqui porque nenhuma delas dá erro — todas falham em silêncio.
 
-1. **O service worker prende as pessoas a uma versão velha.** O TTL do GitHub
-   Pages não se muda e uma aplicação instalada nunca é fechada. Guarda: rede
+1. **O service worker prende as pessoas a uma versão velha.** Guarda: rede
    primeiro nas navegações **com prazo de 3 s**, nome da cache derivado do
    conteúdo, `updateViaCache: 'none'`, e `registration.update()` sempre que a
    aplicação volta a ficar visível.
 2. **«Perto de mim» falha em silêncio no iPhone.** Numa PWA instalada, o pedido
-   de localização pode nunca chamar nem o sucesso nem o erro. Guarda: prazo de
-   8 s, três mensagens distintas conforme a causa, e a procura por concelho
-   como caminho de igual dignidade — que funciona sempre.
-3. **O MapLibre atira no construtor sem WebGL** (~3,5 % dos aparelhos, quase
-   todos Android velhos). Guarda: `try/catch` à volta do construtor, o separador
-   «Mapa» desaparece, a lista continua. Há um teste que finge não haver WebGL.
-4. **O OpenFreeMap pode desaparecer** — um mantenedor, doações, termos que
-   permitem desligar sem aviso. Guarda: o URL está numa constante e há um
-   fornecedor de reserva (VersaTiles) que entra sozinho ao fim de 9 s.
-5. **A partilha-nos-mesmos-termos da ODbL engole texto próprio.** Uma descrição
-   escrita à mão dentro de `data/spots.json` licenciaria essa prosa a toda a
-   gente. Guarda: o ficheiro só leva factos derivados das fontes; o texto do
-   site vive no HTML.
-6. **As acções agendadas do GitHub desligam-se sozinhas** ao fim de 60 dias sem
-   actividade no repositório, e a recolha mensal pára sem erro nenhum. Guarda:
-   `workflow_dispatch` sempre presente, e esta nota.
-7. **Uma coordenada do utilizador nunca pode sair do aparelho.** Nem para o
-   Overpass, nem para um geocodificador, nem para estatísticas. É isso que
-   sustenta não haver pedido de consentimento. Tudo o que é preciso está no
-   ficheiro estático.
+   pode nunca chamar nem o sucesso nem o erro. Guarda: prazo de 8 s, três
+   mensagens distintas conforme a causa, e a procura por concelho como caminho
+   de igual dignidade.
+3. **O MapLibre atira no construtor sem WebGL.** Guarda: `try/catch`, o
+   separador «Mapa» desaparece, a lista continua. Há um teste que finge não
+   haver WebGL.
+4. **O OpenFreeMap pode desaparecer** — um mantenedor, doações. Guarda: o URL
+   está numa constante e o VersaTiles entra sozinho ao fim de 9 s.
+5. **Coordenadas projectadas.** Oeiras publica em EPSG:3763. Guarda: lê-se o
+   campo `crs` do GeoJSON e recusa-se a fonte inteira se algum ponto sair de
+   Portugal.
+6. **Uma recolha mais pequena não substitui a anterior.** O Overpass pode
+   devolver 200, JSON válido e sem aviso, com a consulta cortada a meio.
+   Guarda: abaixo de 90 % do que já lá estava, mantém-se o anterior e exige-se
+   `--forcar`.
+7. **Escolher uma zona não é escrever o nome dela.** Escolhido «Viana do
+   Castelo», o filtro é o CONCELHO. Pelo texto, os parques de Caminha
+   apareciam — porque «Viana do Castelo» é o DISTRITO deles.
+8. **O índice tem os 308 concelhos, não só os 176 com sítios.** Sem os outros,
+   procurar um concelho vazio caía em silêncio no vizinho.
+9. **A partilha-nos-mesmos-termos da ODbL engole texto próprio.** Guarda: o
+   ficheiro de dados só leva factos derivados das fontes.
+10. **As acções agendadas do GitHub desligam-se** ao fim de 60 dias sem
+    actividade. Guarda: `workflow_dispatch` sempre presente, e esta nota.
+11. **Uma coordenada do utilizador nunca sai do aparelho.** Nem para o Overpass,
+   nem para um geocodificador, nem para estatísticas. É isso que sustenta não
+   haver pedido de consentimento.
+
+## Licenças
+
+O **código** está sob MIT. Os **dados não**.
+
+`data/spots.json` deriva do OpenStreetMap e está sob
+**[ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/)** — texto em
+[`LICENSE-DADOS.txt`](LICENSE-DADOS.txt). Quem o usar tem de atribuir
+**© contribuidores do OpenStreetMap** e manter obras derivadas sob ODbL. A
+atribuição viaja dentro do próprio ficheiro, no bloco `meta`.
+
+Complementos: **Câmara Municipal de Lisboa** (CC0), **Câmara Municipal de
+Cascais** e **Câmara Municipal de Oeiras** (CC-BY 4.0).
+Limites administrativos e ortofotos: **Direção-Geral do Território**.
+Mosaicos: **OpenFreeMap** + **OpenMapTiles**.
+`assets/vendor/maplibre-gl.*`: **MapLibre GL JS**, BSD-3-Clause.
+
+Precisas dos dados? Leva o ficheiro em vez de rastejar o site:
+`/data/spots.json`.
 
 ## Privacidade
 
 Sem cookies, sem publicidade, sem contas, sem estatísticas de visitas, sem
-banner de consentimento. A localização é tratada dentro do browser e **nunca
-sai do aparelho** — é o que permite não haver pedido de consentimento
-(Diretrizes 2/2023 do CEPD, §44). Ver [`/privacidade/`](https://barrafixe.pt/privacidade/).
+banner de consentimento. A localização é tratada dentro do browser e **nunca sai
+do aparelho** — é o que permite não haver pedido de consentimento (Diretrizes
+2/2023 do CEPD, §44).

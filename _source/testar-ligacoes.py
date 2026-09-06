@@ -12,6 +12,13 @@ import os, re, sys
 from urllib.parse import urlparse, unquote
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# A BASE sai do CNAME, como na construção. Sem domínio, os caminhos escritos
+# nas páginas começam por `/calisthenics-spots/` e é preciso tirar esse prefixo antes
+# de procurar o ficheiro no disco — senão TODAS as ligações pareciam mortas.
+_cname = os.path.join(RAIZ, 'CNAME')
+BASE = '/' if (os.path.exists(_cname) and open(_cname).read().strip()) else '/calisthenics-spots/'
+
 mortas, vistas = [], 0
 
 paginas = [os.path.join(RAIZ, f) for f in ('index.html', '404.html')]
@@ -33,6 +40,12 @@ for pagina in paginas:
             continue
         vistas += 1
         caminho = unquote(u.path)
+        if BASE != '/':
+            if not caminho.startswith(BASE):
+                mortas.append(f'{os.path.relpath(pagina, RAIZ)} -> {alvo} '
+                              f'(devia começar por {BASE})')
+                continue
+            caminho = '/' + caminho[len(BASE):]
         destino = os.path.join(RAIZ, caminho.lstrip('/'))
         if caminho.endswith('/'):
             destino = os.path.join(destino, 'index.html')
@@ -47,10 +60,11 @@ for f, chave in (('manifest.webmanifest', r'"src"\s*:\s*"([^"]+)"'),
         continue
     for alvo in re.findall(chave, open(p, encoding='utf-8').read()):
         alvo = alvo.split('?')[0]
-        if not alvo.startswith('/') or alvo == '/':
+        if not alvo.startswith('/') or alvo in ('/', BASE):
             continue
         vistas += 1
-        destino = os.path.join(RAIZ, alvo.lstrip('/'))
+        caminho = alvo[len(BASE):] if BASE != '/' and alvo.startswith(BASE) else alvo.lstrip('/')
+        destino = os.path.join(RAIZ, caminho)
         if not os.path.exists(destino):
             mortas.append(f'{f} -> {alvo}')
 

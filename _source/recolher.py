@@ -20,7 +20,7 @@ BRUTO = os.path.join(RAIZ, '_source', 'bruto')
 CONSULTAS = os.path.join(RAIZ, '_source', 'overpass.txt')
 CAOP = os.path.join(RAIZ, '_source', 'caop-municipios.geojson')
 
-AGENTE = 'BarraFixe/1.0 (mapa de calistenia em Portugal; https://github.com/renatovalente5/barrafixe)'
+AGENTE = 'CalisthenicsSpots/1.0 (mapa de calistenia em Portugal; https://github.com/renatovalente5/calisthenics-spots)'
 # DOIS espelhos, não três. O `overpass.kumi.systems` parece um terceiro e não é:
 #     dig overpass.kumi.systems  ->  overpass.private.coffee. -> 193.219.97.30
 #     dig overpass.private.coffee ->                             193.219.97.30
@@ -138,10 +138,33 @@ def main():
         d = overpass(q, nome)
         n = len(d.get('elements', []))
         caminho = os.path.join(BRUTO, nome + '.json')
-        # Uma consulta que devolve zero é quase de certeza um erro do servidor,
-        # não Portugal a ficar sem parques. Não deitar fora o que já lá está.
-        if n == 0 and os.path.exists(caminho):
+
+        # DUAS GUARDAS, e a segunda custou uma investigação.
+        #
+        # A primeira: zero elementos é um erro do servidor, não Portugal a ficar
+        # sem parques.
+        #
+        # A segunda: uma resposta MUITO MAIS PEQUENA do que a anterior é o mesmo
+        # erro, só que disfarçado. O Overpass pode devolver 200, JSON válido e
+        # sem `remark`, com a consulta cortada a meio — e a recolha seguinte
+        # apagava em silêncio centenas de sítios. Aconteceu: uma consulta
+        # ALARGADA voltou com menos 28 elementos do que a estreita, o que é
+        # impossível se a resposta estiver inteira. Abaixo de 90 % do que já cá
+        # estava, não se substitui: exige-se --forcar.
+        anterior = 0
+        if os.path.exists(caminho):
+            try:
+                anterior = len([e for e in json.load(open(caminho))['elements']
+                                if e.get('type') != 'count'])
+            except Exception:
+                anterior = 0
+        if n == 0 and anterior:
             print(f'  {nome}: 0 elementos — MANTIDO o ficheiro anterior')
+            continue
+        if anterior and n < anterior * 0.9 and '--forcar' not in sys.argv:
+            print(f'  {nome}: {n} elementos, MENOS 10 % do que os {anterior} '
+                  f'que cá estavam — MANTIDO o anterior.')
+            print(f'    (se a quebra for real, corre outra vez com --forcar)')
             continue
         json.dump(d, open(caminho, 'w'))
         print(f'  {nome}: {n} elementos -> _source/bruto/{nome}.json')

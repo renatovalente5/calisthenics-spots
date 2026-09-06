@@ -26,7 +26,8 @@ ECRAS = [
 ]
 
 
-def capturar(c, url, nome, largura, altura, dpr, esperar_mapa=True, antes=None):
+def capturar(c, url, nome, largura, altura, dpr, esperar_mapa=True, antes=None,
+             espera_extra=0.0):
     c.cmd('Emulation.setDeviceMetricsOverride', width=largura, height=altura,
           deviceScaleFactor=dpr, mobile=largura < 700)
     c.abrir(url, espera=1.0)
@@ -49,9 +50,9 @@ def capturar(c, url, nome, largura, altura, dpr, esperar_mapa=True, antes=None):
             time.sleep(0.35)
         if not pronto:
             print(f'    AVISO: {nome} — o mapa não chegou a «idle»')
-        time.sleep(0.6)
+        time.sleep(0.6 + espera_extra)
     else:
-        time.sleep(0.5)
+        time.sleep(0.5 + espera_extra)
     dados = c.cmd('Page.captureScreenshot', format='png',
                   captureBeyondViewport=False)['data']
     caminho = os.path.join(SAIDA, nome + '.png')
@@ -64,7 +65,7 @@ def main():
     porta = 4600
     if '--porta' in sys.argv:
         porta = int(sys.argv[sys.argv.index('--porta') + 1])
-    base = f'http://localhost:{porta}'
+    base = f'http://localhost:{porta}/calisthenics-spots'
     os.makedirs(SAIDA, exist_ok=True)
 
     paginas = [('inicio', '/', True)]
@@ -88,6 +89,23 @@ def main():
                 capturar(c, base + caminho, f'{nome}-ficha', 1440, 900, 2,
                          esperar_mapa=True,
                          antes="document.querySelector('.cartao').click()")
+                # Uma ficha com a ortofoto — a peça que responde à pergunta
+                # «isto tem mesmo barras?». Escolhe-se um sítio CONFIRMADO.
+                capturar(c, base + caminho, f'{nome}-ortofoto', 1440, 900, 2,
+                         esperar_mapa=True,
+                         antes=("[...document.querySelectorAll('.cartao')]"
+                                ".find(b=>b.classList.contains('cartao--top')).click()"),
+                         espera_extra=5.0)
+                # E a pesquisa por zona, com o concelho assinalado no mapa.
+                capturar(c, base + caminho, f'{nome}-zona', 1440, 900, 2,
+                         esperar_mapa=True,
+                         antes=("(async()=>{const q=document.getElementById('q');"
+                                "q.value='Viana do Castelo';"
+                                "q.dispatchEvent(new Event('input',{bubbles:true}));"
+                                "await new Promise(r=>setTimeout(r,1400));"
+                                "const b=document.querySelector('.sugestao');"
+                                "if(b) b.click();})()"),
+                         espera_extra=3.0)
     finally:
         c.fechar()
     print(f'\nem {SAIDA}')

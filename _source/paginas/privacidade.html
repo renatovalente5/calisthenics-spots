@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Privacidade — Barra Fixe</title>
-<meta name="description" content="O Barra Fixe não usa cookies, não tem publicidade e não recolhe dados. A tua localização nunca sai do teu telemóvel.">
-<link rel="canonical" href="https://barrafixe.pt/privacidade/">
-<meta name="theme-color" content="#F5F3EE" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14161A" media="(prefers-color-scheme: dark)">
+<title>Privacidade — Calisthenics Spots</title>
+<meta name="description" content="O Calisthenics Spots não usa cookies, não tem publicidade e não recolhe dados. A tua localização nunca sai do teu telemóvel.">
+<link rel="canonical" href="{{SITE}}/privacidade/">
+<meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#110F15" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="/assets/img/pino.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/css/app.css?v={{VERSAO}}">
+<link rel="icon" href="{{BASE}}assets/img/pino.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{BASE}}assets/css/app.css?v={{VERSAO}}">
 </head>
 <body>
 {{CABECA_TEXTO}}
@@ -41,23 +41,30 @@
   <h2>O que fica guardado no teu navegador</h2>
   <p>Uma única coisa, e só se a escolheres: a tua preferência de tema claro ou
   escuro, guardada no <em>armazenamento local</em> do navegador com a chave
-  <code>bf:tema</code>. Fica no teu aparelho, nunca é enviada para lado nenhum, e
+  <code>cs:tema</code>. Fica no teu aparelho, nunca é enviada para lado nenhum, e
   desaparece se limpares os dados do site. Se nunca carregares no botão do tema,
   nada é guardado.</p>
 
   <h2>O que o teu navegador contacta</h2>
   <p>Para desenhar o mapa, o teu navegador vai buscar os mosaicos a
   <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a>
-  (<code>tiles.openfreemap.org</code>). Como em qualquer imagem carregada de outro
-  domínio, esse servidor vê o endereço IP do teu aparelho — é assim que a internet
-  funciona, não é uma escolha nossa de recolher nada. Se ficares só na lista e
-  nunca abrires o mapa, os mosaicos não chegam a ser pedidos.</p>
+  (<code>tiles.openfreemap.org</code>). Se ligares a vista de satélite, vai
+  buscar as ortofotos à <strong>Direção-Geral do Território</strong>
+  (<code>cartografia.dgterritorio.gov.pt</code>). E se abrires a ficha de um
+  sítio, procura fotografias no <a href="https://panoramax.xyz/" rel="noopener">Panoramax</a>
+  (<code>api.panoramax.xyz</code>). Como em qualquer imagem carregada de outro
+  domínio, esses servidores vêem o endereço IP do teu aparelho — é assim que a
+  internet funciona, não é uma escolha nossa de recolher nada. Nenhum deles põe
+  cookies. Se ficares só na lista, nada disto chega a ser pedido.</p>
   <p>Tudo o resto — a folha de estilos, o código, a biblioteca do mapa e o ficheiro
   com os sítios — é servido deste mesmo site. Não há CDN de terceiros, não há
   tipos de letra do Google, não há widgets sociais.</p>
-  <p>O botão <strong>«Como chegar»</strong> é uma ligação normal para o Google Maps
-  (ou para o Apple Maps). Nada é carregado do Google dentro desta página; só sais
-  daqui se carregares, e a partir daí aplicam-se as regras de privacidade deles.</p>
+  <p>Os botões <strong>«Como chegar»</strong>, <strong>«Street View»</strong>,
+  <strong>«Vista de satélite»</strong> e <strong>«Fotos de rua»</strong> são
+  ligações normais para o Google Maps, para o Apple Maps ou para o Mapillary.
+  <strong>Nada é carregado do Google dentro desta página</strong> — não há mapa
+  do Google embebido, não há cookies do Google. Só sais daqui se carregares, e a
+  partir daí aplicam-se as regras de privacidade de quem lá está.</p>
 
   <h2>Registos do alojamento</h2>
   <p>O site está alojado no <strong>GitHub Pages</strong>. Como qualquer servidor
@@ -70,7 +77,7 @@
   <p>Não sendo recolhido nenhum dado pessoal por este site, não há nada para
   consultar, corrigir ou apagar. Ainda assim, se tiveres uma dúvida ou quiseres
   reportar um problema, abre um assunto no
-  <a href="https://github.com/renatovalente5/barra-fixe/issues" rel="noopener">repositório do projecto</a>.</p>
+  <a href="https://github.com/renatovalente5/calisthenics-spots/issues" rel="noopener">repositório do projecto</a>.</p>
 
   <h2>Aviso sobre o equipamento</h2>
   <div class="aviso" style="margin-bottom:1.2rem">

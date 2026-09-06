@@ -89,5 +89,5 @@ const CONFIG = {
   /* A chave pública do Turnstile, que trava robôs sem pedir nada a ninguém.
      Vazia = o formulário funciona na mesma; o servidor deixa passar e a
      moderação apanha o que vier mal. */
-  turnstile: '',
+  turnstile: '0x4AAAAAAEqpOppleLaNDL78',
 };

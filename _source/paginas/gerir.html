@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rever — Calisthenics Spots</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#110F15" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="{{BASE}}assets/img/pino.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{BASE}}assets/css/app.css?v={{VERSAO}}">
+</head>
+<body>
+<!-- A CASA DAS MÁQUINAS. Não está ligada de lado nenhum, não entra no sitemap e
+     leva `noindex`. Não é segurança por obscuridade — a segurança é a chave
+     mestra, que vive nos segredos do Worker e nunca neste ficheiro. O não estar
+     ligada é só para não confundir quem usa a aplicação.
+
+     E ISTO NÃO É DECORAÇÃO, É UMA PROMESSA. A página «Falta um sítio?» diz que
+     um envio com nome escrito à mão fica visível em menos de 24 horas. Sem um
+     sítio onde carregar em «aceitar», essa frase é mentira dentro de uma semana. -->
+<main class="texto">
+  <h1>Rever o que chegou</h1>
+
+  <div id="gerir-entrar">
+    <p class="sub">Só quem tem a chave.</p>
+    <label class="envio__campo">
+      <span>Chave</span>
+      <input type="password" id="gerir-chave" autocomplete="off">
+    </label>
+    <p class="envio__erro" id="gerir-erro" hidden></p>
+    <button class="botao" type="button" id="gerir-abrir">Abrir</button>
+  </div>
+
+  <div id="gerir-painel" hidden>
+    <p class="gerir__contagens" id="gerir-contagens"></p>
+
+    <h2>À espera de revisão</h2>
+    <p class="gerir__ajuda">Só chegam aqui os envios com <strong>nome ou nota
+    escritos à mão</strong>. Os que são só caixas já estão no mapa — uma caixa
+    que diz «barra fixa» não pode ser insulto nem publicidade.</p>
+    <div id="gerir-lista"></div>
+
+    <h2>Alguém diz que já não existem</h2>
+    <p class="gerir__ajuda">Sítios com desmentidos. Vale a pena ver a
+    ortofotografia antes de decidir.</p>
+    <div id="gerir-desmentidos"></div>
+  </div>
+</main>
+<script src="{{BASE}}assets/js/config.js?v={{VERSAO}}" defer></script>
+<script src="{{BASE}}assets/js/gerir.js?v={{VERSAO}}" defer></script>
+</body>
+</html>

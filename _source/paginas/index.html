@@ -76,6 +76,12 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
     Perto de mim
   </button>
+  <!-- «Os meus» só aparece quando há algum guardado: um filtro que devolve
+       sempre zero é ruído na barra de quem nunca guardou nada. -->
+  <button class="chip chip--meus" id="f-meus" type="button" aria-pressed="false" hidden>
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3.3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.8l6.1-.9z"/></svg>
+    Os meus <span class="chip__n" id="n-meus"></span>
+  </button>
   <button class="chip" id="f-barras" type="button" aria-pressed="false">
     Barras confirmadas <span class="chip__n" id="n-barras"></span>
   </button>
@@ -195,11 +201,17 @@
 
         <div id="envio-turnstile" class="envio__turnstile"></div>
 
+        <!-- UMA LINHA, EM PORTUGUÊS DE PESSOA. Um crítico adversarial resumiu-o
+             bem: duas caixas de marcação com texto jurídico por cima do botão de
+             enviar afastam mais gente do que protegem. A prova da cedência
+             grava-se na mesma, com a versão do texto; o que muda é o que se lê. -->
         <p class="envio__letra-pequena">
-          Ao enviar, fica guardada no teu telemóvel uma assinatura anónima — serve
-          para não confirmares o mesmo sítio duas vezes e para poderes apagar o que
+          O que enviares passa a ser <strong>de toda a gente</strong>, incluindo do
+          mapa livre do mundo, e isso não se desfaz.
+          <a href="{{BASE}}contribuir/#direitos">Porquê</a>.
+          Fica guardada no teu telemóvel uma assinatura anónima — para não
+          confirmares o mesmo sítio duas vezes e para poderes apagar o que
           enviaste. Não vai daqui nome, email nem telefone.
-          <a href="{{BASE}}privacidade/">Como isto funciona</a>.
         </p>
 
         <p class="envio__erro" id="envio-erro" hidden></p>

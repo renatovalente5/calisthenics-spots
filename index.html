@@ -24,14 +24,14 @@
 <link rel="manifest" href="/calisthenics-spots/manifest.webmanifest">
 
 <link rel="preload" href="/calisthenics-spots/data/spots.json" as="fetch" type="application/json" crossorigin>
-<link rel="stylesheet" href="/calisthenics-spots/assets/css/app.css?v=06d1412e">
+<link rel="stylesheet" href="/calisthenics-spots/assets/css/app.css?v=4a0f879a">
 <!-- O MapLibre é ALOJADO AQUI, não vem de um CDN. Duas razões, e a segunda é
      a que manda: (1) um CDN é mais um servidor a quem o browser de quem nos
      visita entrega o seu IP, e este site não entrega o IP de ninguém a mais
      ninguém sem ser preciso; (2) o CSS não pode chegar depois do JS — se
      chegar, a biblioteca mede o contentor sem dimensões e fica com um mapa de
      195x300 dentro de uma caixa de 845x609. Local, chega sempre primeiro. -->
-<link rel="stylesheet" href="/calisthenics-spots/assets/vendor/maplibre-gl.css?v=06d1412e">
+<link rel="stylesheet" href="/calisthenics-spots/assets/vendor/maplibre-gl.css?v=4a0f879a">
 
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"Calisthenics Spots",
@@ -75,6 +75,12 @@
   <button class="chip chip--perto" id="f-perto" type="button" aria-pressed="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
     Perto de mim
+  </button>
+  <!-- «Os meus» só aparece quando há algum guardado: um filtro que devolve
+       sempre zero é ruído na barra de quem nunca guardou nada. -->
+  <button class="chip chip--meus" id="f-meus" type="button" aria-pressed="false" hidden>
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3.3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.8l6.1-.9z"/></svg>
+    Os meus <span class="chip__n" id="n-meus"></span>
   </button>
   <button class="chip" id="f-barras" type="button" aria-pressed="false">
     Barras confirmadas <span class="chip__n" id="n-barras"></span>
@@ -195,11 +201,17 @@
 
         <div id="envio-turnstile" class="envio__turnstile"></div>
 
+        <!-- UMA LINHA, EM PORTUGUÊS DE PESSOA. Um crítico adversarial resumiu-o
+             bem: duas caixas de marcação com texto jurídico por cima do botão de
+             enviar afastam mais gente do que protegem. A prova da cedência
+             grava-se na mesma, com a versão do texto; o que muda é o que se lê. -->
         <p class="envio__letra-pequena">
-          Ao enviar, fica guardada no teu telemóvel uma assinatura anónima — serve
-          para não confirmares o mesmo sítio duas vezes e para poderes apagar o que
+          O que enviares passa a ser <strong>de toda a gente</strong>, incluindo do
+          mapa livre do mundo, e isso não se desfaz.
+          <a href="/calisthenics-spots/contribuir/#direitos">Porquê</a>.
+          Fica guardada no teu telemóvel uma assinatura anónima — para não
+          confirmares o mesmo sítio duas vezes e para poderes apagar o que
           enviaste. Não vai daqui nome, email nem telefone.
-          <a href="/calisthenics-spots/privacidade/">Como isto funciona</a>.
         </p>
 
         <p class="envio__erro" id="envio-erro" hidden></p>
@@ -234,10 +246,10 @@
 
 <p class="oculto-visual" role="status" aria-live="polite" id="anuncio"></p>
 
-<script src="/calisthenics-spots/assets/vendor/maplibre-gl.js?v=06d1412e" defer></script>
-<script src="/calisthenics-spots/assets/js/config.js?v=06d1412e" defer></script>
-<script src="/calisthenics-spots/assets/js/mapa.js?v=06d1412e" defer></script>
-<script src="/calisthenics-spots/assets/js/comunidade.js?v=06d1412e" defer></script>
-<script src="/calisthenics-spots/assets/js/app.js?v=06d1412e" defer></script>
+<script src="/calisthenics-spots/assets/vendor/maplibre-gl.js?v=4a0f879a" defer></script>
+<script src="/calisthenics-spots/assets/js/config.js?v=4a0f879a" defer></script>
+<script src="/calisthenics-spots/assets/js/mapa.js?v=4a0f879a" defer></script>
+<script src="/calisthenics-spots/assets/js/comunidade.js?v=4a0f879a" defer></script>
+<script src="/calisthenics-spots/assets/js/app.js?v=4a0f879a" defer></script>
 </body>
 </html>

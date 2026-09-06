@@ -67,9 +67,18 @@ const Comunidade = (() => {
     return !!base();
   }
 
+  /* A CEDÊNCIA DE DIREITOS, gravada com cada envio.
+     Sem isto não há prova nenhuma de que quem contribuiu aceitou que o que
+     escreveu possa ser publicado, redistribuído e devolvido ao OpenStreetMap —
+     e sem essa prova o ficheiro da comunidade não pode sair em CC0. A versão do
+     texto viaja junto: se um dia o texto mudar, sabe-se ao que cada linha
+     aderiu. */
+  const CEDENCIA = 'cc0-1.0/2026-09';
+
   async function enviar(rota, dados) {
     if (!ligada()) return { ok: false, erro: 'sem servidor configurado' };
-    const corpo = Object.assign({ autor: await assinatura() }, dados);
+    const corpo = Object.assign(
+      { autor: await assinatura(), cedencia: CEDENCIA }, dados);
     let r;
     try {
       r = await fetch(base() + rota, {
@@ -85,7 +94,18 @@ const Comunidade = (() => {
     }
     let d = {};
     try { d = await r.json(); } catch (e) { /* resposta sem corpo */ }
-    if (!r.ok) return { ok: false, erro: d.erro || `erro ${r.status}`, estado: r.status };
+    if (!r.ok) {
+      // NÃO SE PERDE O TRABALHO DE NINGUÉM POR UMA AVARIA NOSSA. A primeira
+      // versão só guardava na fila quando a REDE falhava; uma resposta 500 —
+      // exactamente o que o Worker devolve quando o D1 estoira — deitava fora
+      // em silêncio o que a pessoa acabou de escrever, com uma mensagem de erro
+      // e mais nada. Um 5xx ou um 429 querem dizer «agora não»; guardam-se.
+      if (r.status >= 500 || r.status === 429) {
+        guardarNaFila(rota, dados);
+        return { ok: false, erro: 'servidor ocupado', estado: r.status, naFila: true };
+      }
+      return { ok: false, erro: d.erro || `erro ${r.status}`, estado: r.status };
+    }
     return Object.assign({ ok: true }, d);
   }
 
@@ -112,9 +132,10 @@ const Comunidade = (() => {
     let saiu = 0;
     for (const item of f.slice()) {
       const r = await enviar(item.rota, item.dados);
-      if (r.ok || r.estado === 400 || r.estado === 429) {
-        // Sai da fila se passou, e também se o servidor o recusou por razão que
-        // não muda com o tempo — senão fica a bater na porta para sempre.
+      // Sai da fila se passou, e também se foi recusado por razão que NÃO muda
+      // com o tempo (400: coordenada inválida, 403: verificação falhada). Um
+      // 429 quer dizer «amanhã», e um 5xx «mais logo» — esses ficam.
+      if (r.ok || r.estado === 400 || r.estado === 403) {
         f.shift(); saiu++;
       } else {
         break;

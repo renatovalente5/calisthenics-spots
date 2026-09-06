@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+# A casa das máquinas. Não é segredo — o segredo é a chave — mas não tem nada
+# que fazer num motor de busca.
+Disallow: /gerir/
 
 # Os dados são públicos e livres (ODbL). Se os quiseres, leva o ficheiro
 # inteiro em vez de rastejar o site — está tudo aqui, com a atribuição lá

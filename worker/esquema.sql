@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS envios (
   motivo        TEXT,               -- porque foi recusado, para se poder dizer
   autor         TEXT    NOT NULL,   -- resumo da assinatura do autor (ver o Worker)
   ip_resumo     TEXT,               -- SHA-256 truncado do IP + sal diário
+  -- A PROVA DA CEDÊNCIA. Sem isto não há como demonstrar que quem contribuiu
+  -- aceitou que o texto possa ser publicado, redistribuído e devolvido ao
+  -- OpenStreetMap — e sem essa prova o ficheiro da comunidade não pode sair em
+  -- CC0. Guarda-se a VERSÃO do texto aceite, não só «sim».
+  cedencia      TEXT,
   criado_em     TEXT    NOT NULL,
   decidido_em   TEXT,
   -- Quando o envio já foi «cozido» no ficheiro estático. Enquanto for NULL, o
@@ -54,6 +59,15 @@ CREATE TABLE IF NOT EXISTS confirmacoes (
   autor         TEXT    NOT NULL,
   existe        INTEGER NOT NULL,   -- 1 = ainda cá está, 0 = já não existe
   aparelhos     TEXT,               -- opcional: o que a pessoa viu
+  -- A ALTURA DA BARRA, e não há campo nenhum no mundo que a tenha.
+  -- É a primeira pergunta de quem faz calistenia — numa barra baixa não se
+  -- fazem elevações a sério, numa alta demais não se chega — e nenhum
+  -- directório a regista. Não se pede em centímetros: ninguém anda com fita
+  -- métrica. Pede-se o que qualquer pessoa sabe responder pendurada nela:
+  --   'chao'  = os pés chegam ao chão  (barra baixa; dá para remadas)
+  --   'ar'    = fico no ar             (barra alta; dá para elevações a sério)
+  --   NULL    = não experimentei
+  altura        TEXT,
   ip_resumo     TEXT,
   criado_em     TEXT    NOT NULL,
   PRIMARY KEY (sitio, autor)

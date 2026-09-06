@@ -63,6 +63,11 @@ def main():
         verificar('os dados carregam',
                   esperar(c, "typeof estado!=='undefined' && estado.spots.length>0"),
                   'estado.spots ficou vazio')
+        # ESPERAR PELO DELTA ANTES DE CONTAR. Os sítios da comunidade chegam num
+        # segundo pedido, depois de a lista já estar desenhada. Contar antes
+        # disso dava um número que mudava debaixo do teste.
+        esperar(c, 'estado.deltaAplicado === true', 15)
+        time.sleep(0.5)
         n = c.js('estado.spots.length')
         # A vista por omissão exclui os circuitos SÓ DE MÁQUINAS: esta é uma
         # aplicação de calistenia. É esse o número contra o qual se compara.
@@ -70,8 +75,13 @@ def main():
         verificar('há sítios a mais de 700', n > 700, f'só {n}')
         verificar('todos os sítios têm nome',
                   c.js('estado.spots.every(s=>s.nome && s.nome.length>1)'))
-        verificar('todos os sítios têm concelho',
-                  c.js('estado.spots.every(s=>s.con)'))
+        # O CONCELHO SÓ SE EXIGE AOS SÍTIOS DO FICHEIRO. Um sítio enviado por
+        # alguém tem apenas a coordenada que essa pessoa marcou: o concelho sai
+        # do cruzamento com a Carta Administrativa, e isso acontece no cozimento,
+        # não no telemóvel. Exigi-lo aqui seria exigir que a aplicação
+        # adivinhasse — e é melhor não dizer nada do que dizer o concelho errado.
+        verificar('todos os sítios do ficheiro têm concelho',
+                  c.js('estado.spots.filter(s=>s.id>=0 && s.id<1e6).every(s=>s.con)'))
         verificar('as coordenadas estão dentro de Portugal',
                   c.js('estado.spots.every(s=>s.lat>29&&s.lat<43&&s.lon>-32&&s.lon<-5)'))
         verificar('a atribuição da ODbL está visível sem carregar em nada',
@@ -231,7 +241,8 @@ def main():
                   c.js('estado.vistos.length>0 && estado.vistos.every(s=>s.esc===1)'))
         verificar('a contagem do filtro bate com o resultado',
                   c.js("+document.getElementById('n-barras').textContent") ==
-                  c.js('estado.vistos.length'))
+                  c.js('estado.vistos.length'),
+                  c.js("document.getElementById('n-barras').textContent+' vs '+estado.vistos.length"))
         c.js("document.getElementById('f-24').click()")
         time.sleep(0.4)
         verificar('dois filtros combinam-se (E, não OU)',
@@ -247,8 +258,14 @@ def main():
         time.sleep(0.3)
 
         print('\n— a ficha —')
-        c.js("document.querySelector('.cartao').click()")
-        time.sleep(0.6)
+        # ABRIR UM SÍTIO DO FICHEIRO, de propósito. O primeiro cartão da lista
+        # pode ser um sítio enviado pela comunidade — esse não tem objecto do
+        # OpenStreetMap nem concelho, e as afirmações desta secção são sobre o
+        # que vem das fontes.
+        c.js("""(()=>{const s=estado.vistos.find(x=>x.id>=0 && x.id<1e6 && x.osm && x.osm.length);
+          const b=[...document.querySelectorAll('.cartao')].find(x=>+x.dataset.i===s.id);
+          if (b) b.click(); else location.hash='#s='+s.id;})()""")
+        time.sleep(0.8)
         verificar('carregar num cartão abre a ficha',
                   c.js("document.getElementById('ficha').dataset.aberta==='1'"))
         verificar('a ficha tem título',
@@ -488,7 +505,8 @@ def main():
             && !/(^|\.)openfreemap\.org$/.test(h)
             && !/(^|\.)dgterritorio\.gov\.pt$/.test(h)
             && !/(^|\.)workers\.dev$/.test(h)
-            && !/^api\.calisthenics-spots\.pt$/.test(h)))]""")
+            && !/^api\.calisthenics-spots\.pt$/.test(h)
+            && !/^challenges\.cloudflare\.com$/.test(h)))]""")
         verificar('e a app só contacta os domínios que a privacidade nomeia',
                   fora == [], repr(fora))
         c.js("document.getElementById('ficha-fechar').click()")

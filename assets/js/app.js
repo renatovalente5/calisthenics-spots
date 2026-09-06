@@ -115,8 +115,10 @@ const E = {
 
 const estado = {
   spots: [],
+  deltaAplicado: false,
   porId: new Map(),
   confirmacoes: new Map(),
+  favoritos: new Set(),
   vistos: [],
   zonas: null,          // carregadas só quando alguém procura
   zonaActiva: null,
@@ -125,8 +127,8 @@ const estado = {
   // `maquinas` começa FALSO de propósito: esta aplicação é sobre barras para
   // elevações, não sobre circuitos de máquinas guiadas para seniores. Os que os
   // dados identificam como sendo só máquinas ficam de fora até alguém os pedir.
-  filtros: { perto: false, barras: false, luz: false, h24: false, acess: false,
-             maquinas: false },
+  filtros: { perto: false, meus: false, barras: false, luz: false, h24: false,
+             acess: false, maquinas: false },
   termo: '',
   activo: null,
   satelite: false,
@@ -204,6 +206,7 @@ async function arrancar() {
   estado.porId = new Map(estado.spots.map(s => [s.id, s]));
 
   juntarMeus();
+  estado.favoritos = lerFavoritos();
   contarFiltros();
   medirBarras();
   desenhar();
@@ -266,8 +269,11 @@ function filtrar() {
   const zona = estado.zonaActiva;
 
   const out = estado.spots.filter(s => {
+    // «Os meus» manda em tudo, INCLUSIVE na zona escolhida: quem carrega na
+    // estrela quer a sua lista, não a sua lista dentro de um concelho.
+    if (f.meus && !estado.favoritos.has(s.id)) return false;
     if (!f.maquinas && s.esc === 4) return false;
-    if (zona) return s.con === zona.n;
+    if (zona && !f.meus) return s.con === zona.n;
     if (f.barras && s.esc !== 1) return false;
     if (f.luz && s.lit !== 'yes') return false;
     if (f.h24 && !s.h24) return false;
@@ -313,6 +319,18 @@ function contarFiltros() {
   $('#n-acess').textContent = n(s => s.wc === 'yes');
   const nm = $('#n-maquinas');
   if (nm) nm.textContent = n(s => s.esc === 4);
+  // «Os meus» aparece e desaparece com o conteúdo: um filtro que devolve sempre
+  // zero é ruído na barra de quem nunca guardou nada.
+  const bm = $('#f-meus');
+  if (bm) {
+    const q = estado.favoritos.size;
+    bm.hidden = q === 0 && !estado.filtros.meus;
+    $('#n-meus').textContent = q;
+    if (!q && estado.filtros.meus) {
+      estado.filtros.meus = false;
+      bm.setAttribute('aria-pressed', 'false');
+    }
+  }
 }
 
 /* -------------------------------------------------------------------- lista */
@@ -385,7 +403,9 @@ function cartao(s) {
       ${ap.map(a => `<span class="selo selo--ap">${esc(APARELHOS[a])}</span>`).join('')}
       ${s.h24 ? '<span class="selo selo--ap">24 h</span>' : ''}
     </span>
-  </button>`;
+  </button>
+  ${botaoFavorito(s)}`;
+  li.classList.add('item');
   return li;
 }
 
@@ -459,7 +479,10 @@ function abrirFicha(s, { voar = false } = {}) {
   const osm = `https://www.openstreetmap.org/note/new#map=19/${s.lat}/${s.lon}`;
 
   E.fichaCorpo.innerHTML = `
-    <h2 class="ficha__titulo" id="ficha-titulo">${esc(s.nome)}</h2>
+    <div class="ficha__cabeca">
+      <h2 class="ficha__titulo" id="ficha-titulo">${esc(s.nome)}</h2>
+      ${botaoFavorito(s)}
+    </div>
     <p class="ficha__onde">${esc(onde.join(' · '))}</p>
     <div class="ficha__marcas">
       <span class="selo ${e.classe}">${esc(e.rotulo)}</span>
@@ -818,6 +841,45 @@ function mostrarObrigado(naFila, visivel, diz) {
   setTimeout(() => caixa.remove(), 6000);
 }
 
+/* ---------------------------------------------------------------- favoritos */
+
+/* «É a razão número um pela qual eu reabriria a app.» Foi assim que um crítico
+   adversarial resumiu isto, e tinha razão: guardar um sítio é o gesto mais
+   comum de qualquer aplicação de mapas, e este projecto não o tinha.
+   Custa uma tarde e não obriga a nada — fica no telemóvel, não sai de lá, e
+   por isso não faz nascer aviso de consentimento nenhum (§44 das Orientações
+   2/2023: informação que não sai do aparelho nem entra no âmbito). Escreve-se
+   só quando a pessoa carrega na estrela. */
+const FAVORITOS = 'cs:favoritos';
+
+function lerFavoritos() {
+  try { return new Set(JSON.parse(localStorage.getItem(FAVORITOS) || '[]')); }
+  catch (e) { return new Set(); }
+}
+
+function eFavorito(id) {
+  return estado.favoritos.has(id);
+}
+
+function trocarFavorito(id) {
+  if (estado.favoritos.has(id)) estado.favoritos.delete(id);
+  else estado.favoritos.add(id);
+  try {
+    localStorage.setItem(FAVORITOS, JSON.stringify([...estado.favoritos]));
+  } catch (e) { /* modo privado: vale para esta sessão */ }
+  contarFiltros();
+  return estado.favoritos.has(id);
+}
+
+function botaoFavorito(s) {
+  const marcado = eFavorito(s.id);
+  return `<button class="estrela${marcado ? ' estrela--on' : ''}" type="button"
+      data-favorito="${s.id}" aria-pressed="${marcado}"
+      aria-label="${marcado ? 'Tirar dos meus sítios' : 'Guardar nos meus sítios'}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.8l6.1-.9z"/></svg>
+    </button>`;
+}
+
 /* --------------------------------------------------- o DELTA e a FRESCURA */
 
 /* O QUE MUDOU DESDE A ÚLTIMA CONSTRUÇÃO. São duas coisas pequenas: os sítios já
@@ -829,11 +891,17 @@ const DESLOCAMENTO_DELTA = 1e6;   // ids do delta nunca chocam com os do ficheir
 
 async function aplicarDelta() {
   const d = await Comunidade.delta();
+  // A BANDEIRA É PARA OS TESTES, e não é decoração. Isto acontece DEPOIS de a
+  // lista já estar desenhada, e pode acrescentar sítios. Sem uma forma de saber
+  // que já passou, a bateria contava os sítios a meio e comparava números que
+  // mudavam debaixo dela — que é a receita para um teste que falha uma vez em
+  // cada cinco e ninguém percebe porquê.
+  estado.deltaAplicado = true;
   if (!d) return;
   estado.confirmacoes = new Map((d.confirmados || []).map(c => [c.s, c]));
   for (const s of estado.spots) {
     const c = estado.confirmacoes.get(s.id);
-    s.conf = c ? { n: c.n, em: c.em } : null;
+    s.conf = c ? { n: c.n, em: c.em, alt: c.alt } : null;
   }
   // Os sítios aprovados que ainda não foram cozidos no ficheiro.
   const jaCa = new Set(estado.spots.map(s => s.id));
@@ -850,6 +918,11 @@ async function aplicarDelta() {
     });
   }
   estado.porId = new Map(estado.spots.map(s => [s.id, s]));
+  // OS NÚMEROS DOS FILTROS TAMBÉM MUDAM. `contarFiltros` corre no arranque, e
+  // isto acontece depois: sem esta linha, o botão dizia «95 barras confirmadas»
+  // e a lista mostrava 96. Um contador que não bate com o que está por baixo
+  // dele é pior do que contador nenhum.
+  contarFiltros();
   desenhar();
 }
 
@@ -884,9 +957,21 @@ function blocoFrescura(s) {
   const linha = c && c.n
     ? `<strong>Confirmado ${esc(quando)}</strong> por ${c.n} ${c.n === 1 ? 'pessoa' : 'pessoas'}.`
     : 'Ninguém confirmou este sítio ainda.';
+  const diz = c && c.alt
+    ? `<p class="frescura__altura">${c.alt === 'ar'
+        ? 'Barra <strong>alta</strong> — dá para elevações a sério.'
+        : 'Barra <strong>baixa</strong> — os pés chegam ao chão.'}</p>`
+    : '';
   const faltamAparelhos = s.esc === 3;
+  // A ALTURA DA BARRA. É a primeira coisa que quem faz calistenia quer saber —
+  // numa barra baixa não se fazem elevações a sério, numa alta demais não se
+  // chega — e não existe num único directório do mundo, nem no OpenStreetMap.
+  // Não se pergunta em centímetros: pergunta-se o que qualquer pessoa sabe
+  // responder pendurada nela.
+  const temBarra = (s.ap || []).includes('barra_fixa') || s.esc === 3;
   return `<div class="frescura" data-sitio="${s.id}">
       <p class="frescura__diz">${linha}</p>
+      ${diz}
       <p class="frescura__pergunta">${faltamAparelhos
         ? 'Já lá foste? Diz o que lá está — é isso que falta a este sítio.'
         : 'Já lá foste? Diz se ainda está tudo de pé.'}</p>
@@ -894,6 +979,15 @@ function blocoFrescura(s) {
         ${NUCLEO.map(a => `<label class="escolha">
           <input type="checkbox" value="${a}" name="conf-ap">
           <span>${esc(APARELHOS[a])}</span></label>`).join('')}
+      </div>` : ''}
+      ${temBarra ? `<div class="altura">
+        <p class="altura__pergunta">Pendurado na barra mais alta, os pés chegam ao chão?</p>
+        <div class="altura__opcoes">
+          <label class="escolha"><input type="radio" name="conf-altura" value="chao">
+            <span>Chegam — é baixa</span></label>
+          <label class="escolha"><input type="radio" name="conf-altura" value="ar">
+            <span>Fico no ar — é alta</span></label>
+        </div>
       </div>` : ''}
       <div class="frescura__botoes">
         <button class="botao botao--pequeno" type="button" data-conf="sim">
@@ -912,15 +1006,18 @@ async function responderFrescura(caixa, existe) {
   const sitio = +caixa.dataset.sitio;
   const resposta = caixa.querySelector('.frescura__resposta');
   const aparelhos = [...caixa.querySelectorAll('input[name=conf-ap]:checked')].map(x => x.value);
+  const alt = caixa.querySelector('input[name=conf-altura]:checked');
   caixa.querySelectorAll('button').forEach(b => { b.disabled = true; });
-  const r = await Comunidade.confirmar({ sitio, existe, aparelhos });
+  const r = await Comunidade.confirmar({
+    sitio, existe, aparelhos, altura: alt ? alt.value : null,
+  });
   resposta.hidden = false;
   if (r.ok) {
     resposta.textContent = existe
       ? `Obrigado. Já são ${r.confirmacoes} ${r.confirmacoes === 1 ? 'pessoa' : 'pessoas'} a dizer que este sítio está de pé.`
       : 'Obrigado. Vai ser revisto e retirado se se confirmar.';
     const s = estado.porId.get(sitio);
-    if (s && existe) s.conf = { n: r.confirmacoes, em: r.ultima };
+    if (s && existe) s.conf = { n: r.confirmacoes, em: r.ultima, alt: r.altura };
   } else if (r.naFila) {
     resposta.textContent = 'Sem rede. Fica guardado e vai sozinho depois.';
   } else {
@@ -938,6 +1035,26 @@ function ligarEnvio() {
     const caixa = b.closest('.frescura');
     if (caixa) responderFrescura(caixa, b.dataset.conf === 'sim');
   });
+
+  // A ESTRELA. Delegação em ambos os sítios: os cartões e a ficha são
+  // reconstruídos a toda a hora, e ligar um ouvinte a cada um deixaria estrelas
+  // mortas atrás de si.
+  for (const alvo of [E.lista, E.ficha]) {
+    alvo.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-favorito]');
+      if (!b) return;
+      ev.stopPropagation();
+      const ligado = trocarFavorito(+b.dataset.favorito);
+      // Todas as cópias da mesma estrela — a do cartão e a da ficha — mudam.
+      document.querySelectorAll(`[data-favorito="${b.dataset.favorito}"]`).forEach(x => {
+        x.classList.toggle('estrela--on', ligado);
+        x.setAttribute('aria-pressed', String(ligado));
+        x.setAttribute('aria-label', ligado ? 'Tirar dos meus sítios' : 'Guardar nos meus sítios');
+      });
+      anunciar(ligado ? 'Guardado nos teus sítios.' : 'Tirado dos teus sítios.');
+      if (estado.filtros.meus) desenhar();
+    });
+  }
 
   const f = $('#envio-form');
   if (!f) return;
@@ -1243,7 +1360,7 @@ function ligarBotoes() {
   });
 
   const chips = {
-    'f-perto': 'perto', 'f-barras': 'barras', 'f-luz': 'luz',
+    'f-perto': 'perto', 'f-meus': 'meus', 'f-barras': 'barras', 'f-luz': 'luz',
     'f-24': 'h24', 'f-acess': 'acess', 'f-maquinas': 'maquinas',
   };
   for (const [id, chave] of Object.entries(chips)) {

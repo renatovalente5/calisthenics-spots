@@ -464,6 +464,34 @@ def main():
               f'({sum(1 for m in municipais if "barra_fixa" in m["ap_municipal"])} '
               f'com barra declarada)')
 
+    # OS SÍTIOS QUE SÓ AS PESSOAS SABEM. O OpenStreetMap tem ~900 sítios em
+    # Portugal e 129 dos 308 concelhos ficam a zero — verificado balde a balde,
+    # não é a consulta que está mal. Este ficheiro é escrito à mão, a partir dos
+    # assuntos abertos no GitHub pela mira do mapa, e entra no MESMO agrupamento
+    # que tudo o resto: um sítio que já cá esteja não fica duplicado, e os
+    # aparelhos somam-se ao que já se sabia.
+    fc = os.path.join(RAIZ, '_source', 'sitios-da-comunidade.json')
+    if os.path.exists(fc):
+        dc = json.load(open(fc, encoding='utf-8'))
+        n0 = len(municipais)
+        for i, pt in enumerate(dc.get('sitios', [])):
+            if pt.get('lat') is None or pt.get('lon') is None:
+                continue
+            municipais.append({
+                'type': 'municipal', 'id': 10 ** 6 + i,
+                'lat': round(float(pt['lat']), 5), 'lon': round(float(pt['lon']), 5),
+                'fonte': 'COM',
+                'nome_municipal': pt.get('nome'),
+                'rua_municipal': pt.get('rua'),
+                'ap_municipal': [a for a in (pt.get('ap') or [])
+                                 if a in APARELHOS_CONHECIDOS],
+                'nega_municipal': pt.get('nega') or [],
+                'maquina_municipal': bool(pt.get('maquina')),
+                'tags': {},
+            })
+        if len(municipais) > n0:
+            print(f'sítios da comunidade: {len(municipais) - n0}')
+
     pontos, elementos = [], []
     recusados = collections.Counter()
     for e in els + municipais:
@@ -778,6 +806,8 @@ def main():
                 'Câmara Municipal de Oeiras — Equipamentos de Jogo e Recreio (CC-BY 4.0)',
                 'Câmara Municipal da Amadora — Equipamentos de Fitness '
                 '(sem licença declarada; reutilização ao abrigo da Lei n.º 68/2021)',
+                'Sítios enviados por quem os usa '
+                '(_source/sitios-da-comunidade.json, CC0)',
             ],
             'consulta': '_source/overpass.txt',
             'extraido_em': extraido_em(),

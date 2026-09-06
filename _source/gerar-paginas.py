@@ -145,6 +145,9 @@ def numeros():
         'N_BARRAS': f'{esc[1]}',
         'N_CORPO': f'{esc[2]}',
         'N_CONFIRMAR': f'{esc[3]}',
+        # Os concelhos a ZERO. É o número mais honesto que a aplicação tem, e o
+        # que justifica pedir ajuda: 308 menos os que têm alguma coisa.
+        'N_ZERO': f'{308 - len({x["con"] for x in s if x["con"]})}',
         'N_MAQUINAS': f'{esc[4]}',
         'N_APARELHOS': f'{sum(x["n"] for x in s)}',
         'N_LUZ': f'{sum(1 for x in s if x["lit"] == "yes")}',

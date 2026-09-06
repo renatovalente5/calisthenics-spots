@@ -507,6 +507,21 @@ const Mapa = (() => {
 
     aoMudarVista(fn) { estado.aoMudarVista = fn; },
 
+    /* O centro da vista. Serve à mira que marca um sítio em falta: em vez de
+       pedir à pessoa que carregue no ponto certo com o dedo — que num telemóvel
+       falha por dez metros —, ela arrasta o mapa até a cruz ficar por cima das
+       barras, que é a mesma manobra do Google Maps e ninguém precisa de
+       aprender. */
+    centro() {
+      if (!estado.pronto) return null;
+      if (estado.condutor === 'google') {
+        const c = estado.mapa.getCenter();
+        return { lat: c.lat(), lon: c.lng(), zoom: estado.mapa.getZoom() };
+      }
+      const c = estado.mapa.getCenter();
+      return { lat: c.lat, lon: c.lng, zoom: estado.mapa.getZoom() };
+    },
+
     /* Janelas para a bateria de testes. Não são usadas pela aplicação: existem
        para se poder verificar o que está no ecrã sem furar o encapsulamento e
        sem a bateria ter de saber qual dos condutores está a correr. */

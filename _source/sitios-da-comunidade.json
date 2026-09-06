@@ -1,0 +1,30 @@
+{
+  "_leia_isto": [
+    "SÍTIOS QUE NÃO ESTÃO EM FONTE NENHUMA.",
+    "",
+    "O OpenStreetMap tem ~900 sítios em Portugal e 129 dos 308 concelhos ficam a",
+    "zero. Não é a consulta que está mal — foi verificado, balde a balde: não há",
+    "mais nada lá. Simplesmente ninguém os mapeou.",
+    "",
+    "Este ficheiro é para esses. Entra no MESMO agrupamento que o OpenStreetMap e",
+    "que os dados das câmaras, por isso um sítio que já cá esteja não fica",
+    "duplicado: os aparelhos somam-se ao que já se sabia.",
+    "",
+    "COMO ACRESCENTAR UM:",
+    "  {\"nome\": \"...\", \"lat\": 40.98765, \"lon\": -8.54321,",
+    "   \"ap\": [\"barra_fixa\", \"paralelas\"], \"quem\": \"...\", \"quando\": \"2026-09-06\"}",
+    "",
+    "  · lat/lon são obrigatórios; o resto ajuda.",
+    "  · `nome` pode faltar: nesse caso sai o nome do parque ou da localidade,",
+    "    como acontece com os pontos do OpenStreetMap.",
+    "  · `ap` só aceita os nomes que a aplicação conhece (ver APARELHOS em",
+    "    assets/js/app.css... não: assets/js/app.js). Um aparelho inventado é",
+    "    ignorado em silêncio, por isso o testar-dados.py verifica-os.",
+    "  · `maquina: true` marca um circuito que só tem máquinas guiadas.",
+    "",
+    "PORQUE NÃO VAI DIRECTO PARA O OPENSTREETMAP. Vai — quem souber, marque lá,",
+    "que é melhor para toda a gente. Isto é para quem não sabe ou não quer, e",
+    "para não se perder o que essa pessoa sabe."
+  ],
+  "sitios": []
+}

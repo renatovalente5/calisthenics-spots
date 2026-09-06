@@ -1,0 +1,53 @@
+name: Falta um sítio
+description: Sabes de um sítio com barras que não está no mapa? Diz onde.
+title: "Sítio novo: "
+labels: ["sítio novo"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado. Os dados do Calisthenics Spots vêm do OpenStreetMap e dos dados
+        abertos das câmaras, e há muito sítio que não está em nenhum dos dois.
+
+        **Só é mesmo preciso a coordenada.** O resto ajuda, mas não é obrigatório.
+  - type: input
+    id: coordenadas
+    attributes:
+      label: Coordenadas
+      description: >
+        No telemóvel: abre o Google Maps, carrega e segura no sítio, e copia os
+        números que aparecem em cima. Ou cola aqui a ligação do Google Maps.
+      placeholder: "40.98765, -8.54321"
+    validations:
+      required: true
+  - type: input
+    id: nome
+    attributes:
+      label: Como se chama o sítio
+      placeholder: "Parque da Cidade, ao pé do lago"
+  - type: checkboxes
+    id: aparelhos
+    attributes:
+      label: O que lá está
+      description: Marca o que viste. É isto que separa um sítio de calistenia de um circuito de máquinas.
+      options:
+        - label: Barra fixa (dá para fazer elevações)
+        - label: Barras paralelas
+        - label: Escada horizontal (macaquinho)
+        - label: Argolas
+        - label: Espaldar
+        - label: Apoio para flexões
+        - label: Banco de abdominais
+        - label: Só máquinas guiadas (bicicleta, elíptica, volante…)
+  - type: textarea
+    id: nota
+    attributes:
+      label: Mais alguma coisa
+      placeholder: "Tem luz à noite. O chão é de borracha. As barras são altas."
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        Se souberes usar o [OpenStreetMap](https://www.openstreetmap.org/), marcar lá
+        é melhor: aparece aqui na actualização seguinte **e** em dezenas de outras
+        aplicações. Mas abrir este assunto chega — passa-se para cá à mão.

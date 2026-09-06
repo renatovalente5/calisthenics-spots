@@ -391,6 +391,49 @@ def main():
                       c.js("location.hash"))
             c.js("document.getElementById('ficha-fechar').click()")
 
+        print('\n— a mira: marcar um sítio que falta —')
+        # O caminho todo, do botão ao endereço do formulário. Sem isto, a mira
+        # podia abrir e mandar a pessoa para um assunto vazio, sem coordenada,
+        # e ninguém dava por isso até alguém se queixar.
+        verificar('a mira começa escondida',
+                  c.js("document.getElementById('mira').hidden"))
+        c.js("document.getElementById('falta').click()")
+        time.sleep(0.6)
+        verificar('o botão abre a mira',
+                  c.js("!document.getElementById('mira').hidden"))
+        verificar('a cruz fica mesmo no centro do mapa',
+                  c.js("""(()=>{const m=document.querySelector('.mapa').getBoundingClientRect();
+                    const x=document.querySelector('.mira__cruz').getBoundingClientRect();
+                    return Math.abs((x.left+x.right)/2-(m.left+m.right)/2)<2
+                        && Math.abs((x.top+x.bottom)/2-(m.top+m.bottom)/2)<2;})()"""))
+        # Afastar primeiro: a secção anterior deixou o mapa em cima de um pino.
+        c.js("document.getElementById('todo-pais').click()")
+        esperar(c, 'Mapa._zoom() < 8')
+        time.sleep(1.0)
+        verificar('longe demais, o botão fica desligado',
+                  c.js("document.getElementById('mira-abrir')"
+                       ".getAttribute('aria-disabled')==='true'"),
+                  f"zoom {c.js('Mapa._zoom()')}")
+        c.js('Mapa.irPara(40.9, -8.5, 17)')
+        esperar(c, 'Mapa._zoom() >= 16.5')
+        time.sleep(1.4)
+        verificar('perto, o botão liga-se',
+                  c.js("document.getElementById('mira-abrir')"
+                       ".getAttribute('aria-disabled')==='false'"),
+                  f"zoom {c.js('Mapa._zoom()')}")
+        verificar('a coordenada acompanha o mapa, com 5 casas',
+                  c.js("/^40\\.90000, -8\\.50000$/"
+                       ".test(document.getElementById('mira-coord').textContent)"),
+                  c.js("document.getElementById('mira-coord').textContent"))
+        alvo = c.js("document.getElementById('mira-abrir').href")
+        verificar('a ligação leva a coordenada para o formulário do GitHub',
+                  'issues/new' in alvo and 'template=novo-sitio.yml' in alvo
+                  and 'coordenadas=40.90000' in alvo.replace('%2C', ',').replace('%20', ' '),
+                  alvo[:150])
+        c.js("document.getElementById('mira-cancelar').click()")
+        time.sleep(0.4)
+        verificar('cancelar fecha a mira',
+                  c.js("document.getElementById('mira').hidden"))
         print('\n— o que se tirou fica tirado —')
         c.js("document.querySelector('.cartao').click()")
         time.sleep(0.4)

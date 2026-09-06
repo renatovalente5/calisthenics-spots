@@ -552,6 +552,73 @@ function abrirFicha(s, { voar = false } = {}) {
   history.replaceState(null, '', '#s=' + s.i);
 }
 
+/* ------------------------------------------------------------------ a MIRA */
+/* O QUE ISTO RESOLVE. O OpenStreetMap tem cerca de 900 sítios em Portugal e
+   129 dos 308 concelhos estão a zero. Não é a consulta que está mal — foram
+   verificados todos os baldes de etiquetas, não há mais nada lá. Simplesmente
+   ninguém os mapeou, e quem treina na rua sabe de sítios que não estão em fonte
+   nenhuma.
+
+   PORQUE UMA MIRA E NÃO UM TOQUE NO MAPA. Num telemóvel, tocar num ponto falha
+   por dez ou vinte metros e não há como corrigir sem repetir. Arrastar o mapa
+   até a cruz ficar por cima das barras é a manobra que toda a gente já faz no
+   Google Maps para largar um alfinete, e vê-se o que se está a escolher até ao
+   último momento.
+
+   PORQUE VAI PARAR AO GITHUB. O site não tem servidor e não vai ter — é essa a
+   condição do projecto. Um assunto no GitHub com a coordenada já preenchida não
+   custa nada, não precisa de conta nenhuma nova aqui, e deixa rasto público. */
+const NUM_MIRA = 5;   // ~1,1 m; mais casas seria fingir precisão que não há
+
+function ligarMira() {
+  const mira = $('#mira');
+  const botao = $('#falta');
+  if (!mira || !botao) return;
+  const coord = $('#mira-coord');
+  const abrir = $('#mira-abrir');
+
+  function actualizar() {
+    const c = Mapa.centro();
+    if (!c) return;
+    const lat = c.lat.toFixed(NUM_MIRA);
+    const lon = c.lon.toFixed(NUM_MIRA);
+    coord.textContent = lat + ', ' + lon;
+    // O formulário do GitHub aceita valores por endereço, com o id do campo.
+    abrir.href = CONFIG.repo + '/issues/new?template=novo-sitio.yml' +
+      '&title=' + encodeURIComponent('Sítio novo: ') +
+      '&coordenadas=' + encodeURIComponent(lat + ', ' + lon);
+    // Abaixo do zoom 15 a cruz cobre um quarteirão inteiro e a coordenada não
+    // vale nada. Mais vale dizê-lo do que receber um ponto no meio do nada.
+    const perto = c.zoom >= 15;
+    abrir.classList.toggle('botao--desligado', !perto);
+    abrir.setAttribute('aria-disabled', String(!perto));
+    $('#mira .mira__diz').innerHTML = perto
+      ? 'Arrasta o mapa até <strong>por cima das barras</strong>.'
+      : '<strong>Aproxima mais</strong> — daqui de cima a cruz tapa um quarteirão.';
+  }
+
+  function ligar(sim) {
+    mira.hidden = !sim;
+    botao.setAttribute('aria-pressed', String(sim));
+    if (sim) {
+      actualizar();
+      Mapa.aoMudarVista(() => actualizar());
+    } else {
+      Mapa.aoMudarVista(null);
+    }
+  }
+
+  botao.addEventListener('click', () => ligar(mira.hidden));
+  $('#mira-cancelar').addEventListener('click', () => ligar(false));
+  abrir.addEventListener('click', ev => {
+    if (abrir.getAttribute('aria-disabled') === 'true') { ev.preventDefault(); return; }
+    ligar(false);
+  });
+  addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && !mira.hidden) ligar(false);
+  });
+}
+
 function traduzirOsm(id) {
   if (!id) return '';
   const t = { n: 'node', w: 'way', r: 'relation' }[id[0]] || 'node';
@@ -908,6 +975,8 @@ function ligarBotoes() {
     esconderZona();
     Mapa.enquadrar(CONTINENTE, 30);
   });
+
+  ligarMira();
 
   if (E.satelite) {
     E.satelite.addEventListener('click', () => {

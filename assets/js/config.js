@@ -80,4 +80,9 @@ const CONFIG = {
   /* Com que zoom se abre a ficha de um sítio. 18 mostra o quarteirão;
      19-20 mostra o equipamento na ortofoto. */
   zoomDoSitio: 18,
+
+  /* Onde vão parar os sítios que faltam. O botão da mira abre um assunto aqui
+     com a coordenada já preenchida. Se um dia o repositório mudar de nome, é
+     esta linha que muda — e mais nenhuma. */
+  repo: 'https://github.com/renatovalente5/calisthenics-spots',
 };

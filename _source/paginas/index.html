@@ -134,6 +134,28 @@
       <button class="icone-btn" id="todo-pais" type="button" aria-label="Ver Portugal inteiro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg>
       </button>
+      <button class="icone-btn" id="falta" type="button" aria-label="Falta um sítio aqui? Marcar no mapa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z"/><path d="M12 7v6M9 10h6"/></svg>
+      </button>
+    </div>
+
+    <!-- A MIRA. O OpenStreetMap tem ~900 sítios em Portugal e 129 concelhos a
+         zero; quem treina na rua sabe de sítios que não estão em fonte nenhuma.
+         Isto arrasta o mapa até ao sítio e abre um assunto no GitHub com a
+         coordenada já preenchida — sem servidor, sem conta a criar aqui, sem
+         custo. -->
+    <div class="mira" id="mira" hidden>
+      <div class="mira__cruz" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="32" cy="32" r="15"/><path d="M32 6v11M32 47v11M6 32h11M47 32h11"/><circle cx="32" cy="32" r="2.6" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div class="mira__barra" role="group" aria-label="Marcar um sítio que falta">
+        <p class="mira__diz">Arrasta o mapa até <strong>por cima das barras</strong>.</p>
+        <p class="mira__coord" id="mira-coord">—</p>
+        <div class="mira__botoes">
+          <button class="botao botao--fantasma" id="mira-cancelar" type="button">Cancelar</button>
+          <a class="botao" id="mira-abrir" href="#" target="_blank" rel="noopener">É aqui</a>
+        </div>
+      </div>
     </div>
     <p class="mapa__creditos">Mapa © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a></p>
   </section>

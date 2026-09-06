@@ -738,3 +738,37 @@ button, input, select { font: inherit; color: inherit; }
   background: color-mix(in srgb, var(--ink) 72%, transparent);
   color: #fff; border-top-right-radius: var(--r-sm);
 }
+
+/* ------------------------------------------------------ a mira dos sítios em falta */
+/* Uma cruz FIXA no centro do mapa, e o mapa é que se arrasta por baixo dela.
+   É a manobra de largar um alfinete no Google Maps: toda a gente já a sabe, e
+   vê-se o que se está a escolher até ao último momento — ao contrário de um
+   toque no ecrã, que num telemóvel falha por vinte metros. */
+.mira { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.mira__cruz {
+  position: absolute; left: 50%; top: 50%;
+  width: 64px; height: 64px; margin: -32px 0 0 -32px;
+  color: var(--brand-vivid);
+  filter: drop-shadow(0 0 2px var(--ground)) drop-shadow(0 1px 3px rgb(0 0 0 / .45));
+}
+.mira__barra {
+  position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%);
+  width: min(23rem, calc(100% - 1.6rem)); pointer-events: auto;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); box-shadow: var(--sombra-md);
+  padding: .75rem .9rem; text-align: center;
+}
+.mira__diz { margin: 0 0 .15rem; font-size: var(--t-sm); color: var(--ink); }
+.mira__coord {
+  margin: 0 0 .6rem; font-size: var(--t-xs); color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.mira__botoes { display: flex; gap: .5rem; justify-content: center; }
+.mira__botoes .botao { flex: 1 1 0; justify-content: center; }
+.botao--fantasma {
+  background: transparent; color: var(--ink); border: 1px solid var(--line);
+}
+.botao--fantasma:hover { background: var(--surface-2); }
+/* Desligado e NÃO escondido: quem chegou aqui tem de perceber que o botão
+   existe e porque não funciona ainda. */
+.botao--desligado { opacity: .45; cursor: not-allowed; }

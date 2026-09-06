@@ -82,8 +82,17 @@ exigir('a atribuição de todas as fontes municipais está declarada',
 # CMA = Amadora, CMC = Cascais, CML = Lisboa, CMO = Oeiras. Esta guarda existe
 # para que uma fonte nova não entre nos dados sem passar pela atribuição: quem
 # acrescentar um normalizador tem de vir aqui e à lista do rodapé.
-exigir('as fontes conhecidas são só estas cinco',
-       usadas <= {'OSM', 'CMA', 'CMC', 'CML', 'CMO'}, str(sorted(usadas)))
+exigir('as fontes conhecidas são só estas seis',
+       usadas <= {'OSM', 'CMA', 'CMC', 'CML', 'CMO', 'COM'}, str(sorted(usadas)))
+
+# Um aparelho inventado num sítio da comunidade seria ignorado em silêncio pela
+# aplicação e ninguém dava por isso. Aqui mata a construção.
+CONHECIDOS = {'barra_fixa', 'paralelas', 'escada_horizontal', 'argolas', 'espaldar',
+              'flexoes', 'abdominais', 'lombares', 'alongamento', 'agachamento',
+              'trave', 'equilibrio', 'caixa', 'escadas', 'barreiras', 'slalom',
+              'corda', 'escalada', 'slackline', 'suspensao'}
+maus = sorted({a for x in s for a in (x.get('ap') or [])} - CONHECIDOS)
+exigir('todo o aparelho tem etiqueta na aplicação', not maus, str(maus))
 exigir('os ids do OSM têm a forma certa (n/w/r + número)',
        all(all(o[0] in 'nwr' and o[1:].isdigit() for o in x.get('osm', [])) for x in s))
 

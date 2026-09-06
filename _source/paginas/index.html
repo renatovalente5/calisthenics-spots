@@ -153,9 +153,61 @@
         <p class="mira__coord" id="mira-coord">—</p>
         <div class="mira__botoes">
           <button class="botao botao--fantasma" id="mira-cancelar" type="button">Cancelar</button>
-          <a class="botao" id="mira-abrir" href="#" target="_blank" rel="noopener">É aqui</a>
+          <button class="botao" id="mira-abrir" type="button">É aqui</button>
         </div>
       </div>
+    </div>
+
+    <!-- O FORMULÁRIO. Abre por cima do mapa, com a coordenada já escolhida.
+         Nada aqui é obrigatório além do que já foi marcado no mapa: pedir uma
+         descrição e uma fotografia à entrada é o que mantém a concorrência em
+         295 sítios enquanto nós temos 887. -->
+    <div class="envio" id="envio" hidden role="dialog" aria-modal="true" aria-labelledby="envio-titulo">
+      <form class="envio__caixa" id="envio-form">
+        <button class="ficha__fechar" id="envio-fechar" type="button" aria-label="Fechar sem enviar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 class="envio__titulo" id="envio-titulo">O que há aqui?</h2>
+        <p class="envio__coord" id="envio-coord">—</p>
+
+        <fieldset class="envio__grupo">
+          <legend>Barras e peso corporal</legend>
+          <p class="envio__ajuda">É isto que separa um sítio de calistenia de um circuito de máquinas. Marca o que viste.</p>
+          <div class="escolhas" id="envio-nucleo"></div>
+        </fieldset>
+
+        <details class="envio__mais">
+          <summary>Mais equipamento</summary>
+          <div class="escolhas" id="envio-extras"></div>
+        </details>
+
+        <label class="envio__campo">
+          <span>Como se chama <em>(opcional)</em></span>
+          <input type="text" id="envio-nome" maxlength="80" autocomplete="off"
+                 placeholder="Parque da Cidade, ao pé do lago">
+        </label>
+
+        <label class="envio__campo">
+          <span>Alguma coisa a acrescentar <em>(opcional)</em></span>
+          <textarea id="envio-nota" maxlength="400" rows="2"
+                    placeholder="Tem luz à noite. O chão é de borracha. As barras são altas."></textarea>
+        </label>
+
+        <div id="envio-turnstile" class="envio__turnstile"></div>
+
+        <p class="envio__letra-pequena">
+          Ao enviar, fica guardada no teu telemóvel uma assinatura anónima — serve
+          para não confirmares o mesmo sítio duas vezes e para poderes apagar o que
+          enviaste. Não vai daqui nome, email nem telefone.
+          <a href="{{BASE}}privacidade/">Como isto funciona</a>.
+        </p>
+
+        <p class="envio__erro" id="envio-erro" hidden></p>
+        <div class="envio__botoes">
+          <button class="botao botao--fantasma" type="button" id="envio-cancelar">Cancelar</button>
+          <button class="botao" type="submit" id="envio-enviar">Enviar este sítio</button>
+        </div>
+      </form>
     </div>
     <p class="mapa__creditos">Mapa © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> · <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a></p>
   </section>
@@ -185,6 +237,7 @@
 <script src="{{BASE}}assets/vendor/maplibre-gl.js?v={{VERSAO}}" defer></script>
 <script src="{{BASE}}assets/js/config.js?v={{VERSAO}}" defer></script>
 <script src="{{BASE}}assets/js/mapa.js?v={{VERSAO}}" defer></script>
+<script src="{{BASE}}assets/js/comunidade.js?v={{VERSAO}}" defer></script>
 <script src="{{BASE}}assets/js/app.js?v={{VERSAO}}" defer></script>
 </body>
 </html>

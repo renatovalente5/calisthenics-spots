@@ -116,6 +116,7 @@ const E = {
 const estado = {
   spots: [],
   porId: new Map(),
+  confirmacoes: new Map(),
   vistos: [],
   zonas: null,          // carregadas só quando alguém procura
   zonaActiva: null,
@@ -202,6 +203,7 @@ async function arrancar() {
   }));
   estado.porId = new Map(estado.spots.map(s => [s.id, s]));
 
+  juntarMeus();
   contarFiltros();
   medirBarras();
   desenhar();
@@ -211,6 +213,11 @@ async function arrancar() {
 
   abrirDoEndereco();
   addEventListener('hashchange', abrirDoEndereco);
+
+  // O que ficou por enviar da última vez sai agora, em silêncio. E vai-se buscar
+  // o que mudou desde a última construção — se falhar, não se nota.
+  Comunidade.escoarFila().then(n => { if (n) juntarMeus(); });
+  aplicarDelta();
 }
 
 function abrirDoEndereco() {
@@ -509,6 +516,8 @@ function abrirFicha(s, { voar = false } = {}) {
       </div>
     </div>
 
+    ${blocoFrescura(s)}
+
     <div class="ficha__acoes">
       <a class="botao" href="${ios ? amaps : gmaps}" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>
@@ -556,12 +565,13 @@ function abrirFicha(s, { voar = false } = {}) {
   history.replaceState(null, '', '#s=' + s.id);
 }
 
-/* ------------------------------------------------------------------ a MIRA */
+/* --------------------------------------------------- a MIRA e o ENVIO */
 /* O QUE ISTO RESOLVE. O OpenStreetMap tem cerca de 900 sítios em Portugal e
-   129 dos 308 concelhos estão a zero. Não é a consulta que está mal — foram
-   verificados todos os baldes de etiquetas, não há mais nada lá. Simplesmente
-   ninguém os mapeou, e quem treina na rua sabe de sítios que não estão em fonte
-   nenhuma.
+   130 dos 308 concelhos estão a zero. Não é a consulta que está mal — foram
+   verificados todos os baldes de etiquetas do OSM, o dados.gov.pt inteiro e os
+   servidores de mapas de 29 câmaras. Não há mais nada para ir buscar. Quem
+   treina na rua sabe de sítios que não estão em fonte nenhuma, e é essa a única
+   fonte que falta.
 
    PORQUE UMA MIRA E NÃO UM TOQUE NO MAPA. Num telemóvel, tocar num ponto falha
    por dez ou vinte metros e não há como corrigir sem repetir. Arrastar o mapa
@@ -569,10 +579,14 @@ function abrirFicha(s, { voar = false } = {}) {
    Google Maps para largar um alfinete, e vê-se o que se está a escolher até ao
    último momento.
 
-   PORQUE VAI PARAR AO GITHUB. O site não tem servidor e não vai ter — é essa a
-   condição do projecto. Um assunto no GitHub com a coordenada já preenchida não
-   custa nada, não precisa de conta nenhuma nova aqui, e deixa rasto público. */
+   E PORQUE NÃO SAI DAQUI. A primeira versão disto abria um formulário no GitHub.
+   Funcionava e estava errado: quem usa a aplicação não tem de saber onde ela
+   está alojada, nem de aterrar no repositório pessoal de quem a faz. O envio é
+   agora um pedido à API — ver assets/js/comunidade.js. */
 const NUM_MIRA = 5;   // ~1,1 m; mais casas seria fingir precisão que não há
+const ZOOM_MINIMO_MIRA = 15;
+
+let miraLigar = null;   // preenchido por ligarMira()
 
 function ligarMira() {
   const mira = $('#mira');
@@ -584,16 +598,10 @@ function ligarMira() {
   function actualizar() {
     const c = Mapa.centro();
     if (!c) return;
-    const lat = c.lat.toFixed(NUM_MIRA);
-    const lon = c.lon.toFixed(NUM_MIRA);
-    coord.textContent = lat + ', ' + lon;
-    // O formulário do GitHub aceita valores por endereço, com o id do campo.
-    abrir.href = CONFIG.repo + '/issues/new?template=novo-sitio.yml' +
-      '&title=' + encodeURIComponent('Sítio novo: ') +
-      '&coordenadas=' + encodeURIComponent(lat + ', ' + lon);
+    coord.textContent = c.lat.toFixed(NUM_MIRA) + ', ' + c.lon.toFixed(NUM_MIRA);
     // Abaixo do zoom 15 a cruz cobre um quarteirão inteiro e a coordenada não
     // vale nada. Mais vale dizê-lo do que receber um ponto no meio do nada.
-    const perto = c.zoom >= 15;
+    const perto = c.zoom >= ZOOM_MINIMO_MIRA;
     abrir.classList.toggle('botao--desligado', !perto);
     abrir.setAttribute('aria-disabled', String(!perto));
     $('#mira .mira__diz').innerHTML = perto
@@ -611,15 +619,333 @@ function ligarMira() {
       Mapa.aoMudarVista(null);
     }
   }
+  miraLigar = ligar;
 
-  botao.addEventListener('click', () => ligar(mira.hidden));
+  botao.addEventListener('click', () => {
+    if (!Comunidade.ligada()) {
+      anunciar('Os envios estão desligados nesta versão.');
+      return;
+    }
+    ligar(mira.hidden);
+  });
   $('#mira-cancelar').addEventListener('click', () => ligar(false));
-  abrir.addEventListener('click', ev => {
-    if (abrir.getAttribute('aria-disabled') === 'true') { ev.preventDefault(); return; }
+  abrir.addEventListener('click', () => {
+    if (abrir.getAttribute('aria-disabled') === 'true') return;
+    const c = Mapa.centro();
+    if (!c) return;
     ligar(false);
+    abrirEnvio(c.lat, c.lon);
   });
   addEventListener('keydown', ev => {
     if (ev.key === 'Escape' && !mira.hidden) ligar(false);
+  });
+}
+
+/* ------------------------------------------------------------------ o ENVIO */
+
+const estadoEnvio = { lat: null, lon: null, aberto: false, focoAnterior: null };
+
+function caixasDeAparelhos(alvo, chaves, prefixo) {
+  alvo.innerHTML = chaves.map(a => `
+    <label class="escolha">
+      <input type="checkbox" value="${a}" name="${prefixo}">
+      <span>${esc(APARELHOS[a])}</span>
+    </label>`).join('');
+}
+
+function abrirEnvio(lat, lon) {
+  const caixa = $('#envio');
+  if (!caixa) return;
+  estadoEnvio.lat = +lat.toFixed(NUM_MIRA);
+  estadoEnvio.lon = +lon.toFixed(NUM_MIRA);
+  estadoEnvio.aberto = true;
+  estadoEnvio.focoAnterior = document.activeElement;
+
+  // Mostrar com as 5 casas SEMPRE. `+n.toFixed(5)` volta a ser um número e come
+  // os zeros à direita: 40.90000 aparecia como «40.9», que parece precisão de
+  // quilómetro a quem está a marcar um parque.
+  $('#envio-coord').textContent =
+    estadoEnvio.lat.toFixed(NUM_MIRA) + ', ' + estadoEnvio.lon.toFixed(NUM_MIRA);
+  caixasDeAparelhos($('#envio-nucleo'), NUCLEO, 'ap');
+  caixasDeAparelhos($('#envio-extras'),
+    Object.keys(APARELHOS).filter(a => !NUCLEO.includes(a)), 'ap');
+  $('#envio-nome').value = '';
+  $('#envio-nota').value = '';
+  $('#envio-erro').hidden = true;
+  $('#envio-enviar').disabled = false;
+  $('#envio-enviar').textContent = 'Enviar este sítio';
+
+  caixa.hidden = false;
+  // O foco vai para o primeiro aparelho: é a primeira coisa a decidir, e num
+  // leitor de ecrã anuncia logo do que trata a caixa.
+  const primeiro = caixa.querySelector('input[type=checkbox]');
+  if (primeiro) primeiro.focus();
+  desenharTurnstile();
+}
+
+function fecharEnvio() {
+  const caixa = $('#envio');
+  if (!caixa) return;
+  caixa.hidden = true;
+  estadoEnvio.aberto = false;
+  if (estadoEnvio.focoAnterior && estadoEnvio.focoAnterior.focus) {
+    estadoEnvio.focoAnterior.focus();
+  }
+}
+
+/* O Turnstile só é carregado QUANDO o formulário abre, e não no arranque: quem
+   só consulta o mapa não contacta a Cloudflare por causa disto. */
+let turnstileWidget = null;
+function desenharTurnstile() {
+  const alvo = $('#envio-turnstile');
+  if (!alvo || !CONFIG.turnstile) return;
+  if (turnstileWidget !== null) return;
+  const desenhar = () => {
+    if (!window.turnstile) return;
+    turnstileWidget = window.turnstile.render(alvo, {
+      sitekey: CONFIG.turnstile, theme: 'auto', size: 'flexible',
+      language: 'pt', action: 'envio',
+    });
+  };
+  if (window.turnstile) { desenhar(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  s.async = true;
+  s.onload = desenhar;
+  document.head.appendChild(s);
+}
+
+function fichaDoTurnstile() {
+  try {
+    return (window.turnstile && turnstileWidget !== null)
+      ? window.turnstile.getResponse(turnstileWidget) : null;
+  } catch (e) { return null; }
+}
+
+async function submeterEnvio(ev) {
+  ev.preventDefault();
+  const botao = $('#envio-enviar');
+  const aviso = $('#envio-erro');
+  const aparelhos = [...document.querySelectorAll('#envio input[name=ap]:checked')]
+    .map(x => x.value);
+
+  botao.disabled = true;
+  botao.textContent = 'A enviar…';
+  aviso.hidden = true;
+
+  const r = await Comunidade.novoSitio({
+    lat: estadoEnvio.lat, lon: estadoEnvio.lon,
+    aparelhos,
+    nome: $('#envio-nome').value.trim() || null,
+    nota: $('#envio-nota').value.trim() || null,
+    ficha: fichaDoTurnstile(),
+  });
+
+  if (!r.ok && !r.naFila) {
+    aviso.textContent = r.erro === 'sem rede'
+      ? 'Sem rede. Fica guardado e vai sozinho quando houver.'
+      : 'Não deu: ' + r.erro;
+    aviso.hidden = false;
+    botao.disabled = false;
+    botao.textContent = 'Tentar outra vez';
+    return;
+  }
+
+  fecharEnvio();
+  // A RECOMPENSA IMEDIATA. O sítio aparece no mapa e na lista, ali, à frente da
+  // pessoa. Sem isto, ela carrega em «enviar» e não acontece nada visível — que
+  // é a forma mais segura de nunca mais receber nada dela.
+  acrescentarSitioLocal({
+    lat: estadoEnvio.lat, lon: estadoEnvio.lon,
+    nome: $('#envio-nome').value.trim() || 'Sítio que enviaste',
+    ap: aparelhos, meu: true, visivel: !!r.visivel,
+  });
+  anunciar(r.naFila ? 'Guardado. Vai sozinho assim que houver rede.'
+    : (r.diz || 'Obrigado.'));
+  mostrarObrigado(r.naFila, r.visivel, r.diz);
+}
+
+/* Um sítio que a pessoa acabou de enviar, visível só no aparelho dela até ser
+   revisto. Vive em memória e no armazenamento local — nunca no ficheiro de
+   dados, que é público e tem de continuar a merecer confiança. */
+const MEUS = 'cs:meus';
+
+function lerMeus() {
+  try { return JSON.parse(localStorage.getItem(MEUS) || '[]'); } catch (e) { return []; }
+}
+
+function acrescentarSitioLocal(s) {
+  const meus = lerMeus();
+  meus.push(Object.assign({ quando: Date.now() }, s));
+  try { localStorage.setItem(MEUS, JSON.stringify(meus.slice(-50))); } catch (e) { /* nada */ }
+  juntarMeus();
+  desenhar();
+}
+
+/* Os sítios enviados por esta pessoa entram na lista com um identificador
+   negativo — impossível de confundir com um id do ficheiro, que é sempre >= 0. */
+function juntarMeus() {
+  const meus = lerMeus();
+  estado.spots = estado.spots.filter(s => s.id >= 0);
+  meus.forEach((m, k) => {
+    const s = {
+      id: -(k + 1), lat: m.lat, lon: m.lon, nome: m.nome, visivel: m.visivel !== false,
+      con: null, dis: null, reg: null, loc: null, rua: null,
+      esc: (m.ap || []).some(a => NUCLEO.includes(a)) ? 1 : 3,
+      ap: m.ap || [], n: (m.ap || []).length || 1, zonas: 1,
+      fontes: ['TU'], osm: [], meu: true,
+      forte: normalizar(m.nome || ''), fraco: '',
+    };
+    estado.spots.push(s);
+  });
+  estado.porId = new Map(estado.spots.map(s => [s.id, s]));
+}
+
+function mostrarObrigado(naFila, visivel, diz) {
+  const caixa = document.createElement('div');
+  caixa.className = 'obrigado';
+  caixa.setAttribute('role', 'status');
+  // DIZER A VERDADE SOBRE O QUE ACABOU DE ACONTECER. Um envio só de caixas está
+  // mesmo no mapa de toda a gente; um com nome escrito à mão espera por revisão.
+  // Prometer «já está» nos dois casos seria mentir a metade das pessoas.
+  caixa.innerHTML = naFila
+    ? '<strong>Guardado no telemóvel.</strong> Vai sozinho assim que houver rede.'
+    : (visivel
+      ? '<strong>Obrigado — já está no mapa.</strong> Toda a gente o vê a partir de agora.'
+      : `<strong>Obrigado.</strong> ${esc(diz || 'Fica visível depois de ser revisto.')}`);
+  document.body.appendChild(caixa);
+  setTimeout(() => caixa.classList.add('obrigado--sai'), 5200);
+  setTimeout(() => caixa.remove(), 6000);
+}
+
+/* --------------------------------------------------- o DELTA e a FRESCURA */
+
+/* O QUE MUDOU DESDE A ÚLTIMA CONSTRUÇÃO. São duas coisas pequenas: os sítios já
+   revistos que ainda não entraram no ficheiro estático, e quantas pessoas
+   confirmaram cada sítio e quando. Se o servidor não responder, nada disto
+   acontece e a aplicação fica exactamente como estava — os 887 sítios vêm de um
+   ficheiro que a rede de distribuição serve, não daqui. */
+const DESLOCAMENTO_DELTA = 1e6;   // ids do delta nunca chocam com os do ficheiro
+
+async function aplicarDelta() {
+  const d = await Comunidade.delta();
+  if (!d) return;
+  estado.confirmacoes = new Map((d.confirmados || []).map(c => [c.s, c]));
+  for (const s of estado.spots) {
+    const c = estado.confirmacoes.get(s.id);
+    s.conf = c ? { n: c.n, em: c.em } : null;
+  }
+  // Os sítios aprovados que ainda não foram cozidos no ficheiro.
+  const jaCa = new Set(estado.spots.map(s => s.id));
+  for (const n of (d.novos || [])) {
+    const id = DESLOCAMENTO_DELTA + n.id;
+    if (jaCa.has(id)) continue;
+    estado.spots.push({
+      id, lat: n.lat, lon: n.lon, nome: n.nome || 'Sítio novo',
+      con: null, dis: null, reg: null, loc: null, rua: null,
+      esc: (n.ap || []).some(a => NUCLEO.includes(a)) ? 1 : 3,
+      ap: n.ap || [], n: (n.ap || []).length || 1, zonas: 1,
+      fontes: ['COM'], osm: [], novo: true,
+      forte: normalizar(n.nome || ''), fraco: '',
+    });
+  }
+  estado.porId = new Map(estado.spots.map(s => [s.id, s]));
+  desenhar();
+}
+
+function haQuanto(iso) {
+  if (!iso) return null;
+  const dias = Math.floor((Date.now() - Date.parse(iso)) / 86400e3);
+  if (!Number.isFinite(dias)) return null;
+  if (dias <= 0) return 'hoje';
+  if (dias === 1) return 'ontem';
+  if (dias < 30) return `há ${dias} dias`;
+  if (dias < 60) return 'há um mês';
+  if (dias < 365) return `há ${Math.round(dias / 30)} meses`;
+  return 'há mais de um ano';
+}
+
+/* A FRESCURA É O QUE NOS SEPARA DE TODOS. Os directórios que existem são
+   despejos do OpenStreetMap sem data: dizem que há um parque, não dizem se
+   ainda lá está. Uma linha a dizer «confirmado há três dias por duas pessoas» é
+   a única coisa desta aplicação que ninguém pode copiar sem refazer a base de
+   dados de raiz. */
+function blocoFrescura(s) {
+  if (s.meu) {
+    return `<div class="frescura frescura--meu">
+      <strong>Enviaste este sítio.</strong> ${s.visivel
+        ? 'Já está no mapa de toda a gente.'
+        : 'Fica visível para toda a gente depois de ser revisto — em menos de 24 horas.'}
+      </div>`;
+  }
+  if (!Comunidade.ligada()) return '';
+  const c = s.conf;
+  const quando = c && haQuanto(c.em);
+  const linha = c && c.n
+    ? `<strong>Confirmado ${esc(quando)}</strong> por ${c.n} ${c.n === 1 ? 'pessoa' : 'pessoas'}.`
+    : 'Ninguém confirmou este sítio ainda.';
+  const faltamAparelhos = s.esc === 3;
+  return `<div class="frescura" data-sitio="${s.id}">
+      <p class="frescura__diz">${linha}</p>
+      <p class="frescura__pergunta">${faltamAparelhos
+        ? 'Já lá foste? Diz o que lá está — é isso que falta a este sítio.'
+        : 'Já lá foste? Diz se ainda está tudo de pé.'}</p>
+      ${faltamAparelhos ? `<div class="escolhas escolhas--fina" id="conf-ap">
+        ${NUCLEO.map(a => `<label class="escolha">
+          <input type="checkbox" value="${a}" name="conf-ap">
+          <span>${esc(APARELHOS[a])}</span></label>`).join('')}
+      </div>` : ''}
+      <div class="frescura__botoes">
+        <button class="botao botao--pequeno" type="button" data-conf="sim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="m4 12.5 5 5L20 6.5"/></svg>
+          Estive lá, está tudo
+        </button>
+        <button class="botao botao--fantasma botao--pequeno" type="button" data-conf="nao">
+          Já não existe
+        </button>
+      </div>
+      <p class="frescura__resposta" hidden></p>
+    </div>`;
+}
+
+async function responderFrescura(caixa, existe) {
+  const sitio = +caixa.dataset.sitio;
+  const resposta = caixa.querySelector('.frescura__resposta');
+  const aparelhos = [...caixa.querySelectorAll('input[name=conf-ap]:checked')].map(x => x.value);
+  caixa.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  const r = await Comunidade.confirmar({ sitio, existe, aparelhos });
+  resposta.hidden = false;
+  if (r.ok) {
+    resposta.textContent = existe
+      ? `Obrigado. Já são ${r.confirmacoes} ${r.confirmacoes === 1 ? 'pessoa' : 'pessoas'} a dizer que este sítio está de pé.`
+      : 'Obrigado. Vai ser revisto e retirado se se confirmar.';
+    const s = estado.porId.get(sitio);
+    if (s && existe) s.conf = { n: r.confirmacoes, em: r.ultima };
+  } else if (r.naFila) {
+    resposta.textContent = 'Sem rede. Fica guardado e vai sozinho depois.';
+  } else {
+    resposta.textContent = 'Não deu: ' + r.erro;
+    caixa.querySelectorAll('button').forEach(b => { b.disabled = false; });
+  }
+}
+
+function ligarEnvio() {
+  // Delegação: o bloco da frescura é reconstruído a cada ficha aberta, por isso
+  // não se pode ligar um ouvinte a botões que ainda não existem.
+  E.ficha.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-conf]');
+    if (!b) return;
+    const caixa = b.closest('.frescura');
+    if (caixa) responderFrescura(caixa, b.dataset.conf === 'sim');
+  });
+
+  const f = $('#envio-form');
+  if (!f) return;
+  f.addEventListener('submit', submeterEnvio);
+  $('#envio-fechar').addEventListener('click', fecharEnvio);
+  $('#envio-cancelar').addEventListener('click', fecharEnvio);
+  addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && estadoEnvio.aberto) fecharEnvio();
   });
 }
 
@@ -981,6 +1307,7 @@ function ligarBotoes() {
   });
 
   ligarMira();
+  ligarEnvio();
 
   if (E.satelite) {
     E.satelite.addEventListener('click', () => {

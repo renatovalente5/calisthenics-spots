@@ -1,0 +1,19 @@
+name = "calisthenics-spots-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# A base fica presa à JURISDIÇÃO EUROPEIA, e isso escolhe-se na criação e nunca
+# mais se muda. A dica de localização (`--location weur`) não garante nada em
+# termos legais: só `--jurisdiction eu` obriga a Cloudflare a correr e a guardar
+# os dados dentro da União.
+[[d1_databases]]
+binding = "DB"
+database_name = "calisthenics-spots"
+database_id = "910c02e3-3f70-49c6-a4a3-7483f7e17a88"
+
+[observability]
+enabled = true
+
+[vars]
+# A origem do site. Só daqui se aceitam pedidos com credenciais.
+ORIGENS = "http://localhost:4600,https://calisthenics-spots.pt,https://www.calisthenics-spots.pt,https://renatovalente5.github.io"

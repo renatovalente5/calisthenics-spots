@@ -426,11 +426,34 @@ def main():
                   c.js("/^40\\.90000, -8\\.50000$/"
                        ".test(document.getElementById('mira-coord').textContent)"),
                   c.js("document.getElementById('mira-coord').textContent"))
-        alvo = c.js("document.getElementById('mira-abrir').href")
-        verificar('a ligação leva a coordenada para o formulário do GitHub',
-                  'issues/new' in alvo and 'template=novo-sitio.yml' in alvo
-                  and 'coordenadas=40.90000' in alvo.replace('%2C', ',').replace('%20', ' '),
-                  alvo[:150])
+        # O «É aqui» abre o formulário DENTRO da aplicação. A primeira versão
+        # disto abria um assunto no GitHub: funcionava, e estava errado — quem
+        # usa a aplicação não tem de saber onde ela está alojada.
+        c.js("document.getElementById('mira-abrir').click()")
+        time.sleep(0.6)
+        verificar('«É aqui» abre o formulário na própria aplicação',
+                  c.js("!document.getElementById('envio').hidden"))
+        verificar('e não manda ninguém para o GitHub',
+                  c.js("!/github/i.test(document.getElementById('envio').innerHTML)"))
+        verificar('a coordenada escolhida vai no formulário',
+                  c.js("document.getElementById('envio-coord').textContent.startsWith('40.90000')"),
+                  c.js("document.getElementById('envio-coord').textContent"))
+        verificar('há uma caixa por cada aparelho de núcleo',
+                  c.js("document.querySelectorAll('#envio-nucleo input').length") == 5,
+                  c.js("document.querySelectorAll('#envio-nucleo input').length"))
+        verificar('e o formulário diz o que fica guardado no aparelho',
+                  c.js("/assinatura anónima/.test("
+                       "document.querySelector('.envio__letra-pequena').textContent)"))
+        c.js("document.getElementById('envio-cancelar').click()")
+        time.sleep(0.3)
+        verificar('cancelar fecha o formulário',
+                  c.js("document.getElementById('envio').hidden"))
+        # NADA É ESCRITO NO APARELHO SÓ POR ABRIR A APLICAÇÃO. É esta linha que
+        # mantém o site sem aviso de cookies: a assinatura nasce no primeiro
+        # envio e não antes. Se um dia alguém a criar no arranque, isto falha.
+        verificar('abrir a app e desistir não escreve assinatura nenhuma',
+                  c.js("!localStorage.getItem('cs:assinatura')"),
+                  c.js("Object.keys(localStorage).join(',')"))
         c.js("document.getElementById('mira-cancelar').click()")
         time.sleep(0.4)
         verificar('cancelar fecha a mira',
@@ -463,7 +486,9 @@ def main():
           .map(u => u.host)
           .filter(h => h !== location.host
             && !/(^|\.)openfreemap\.org$/.test(h)
-            && !/(^|\.)dgterritorio\.gov\.pt$/.test(h)))]""")
+            && !/(^|\.)dgterritorio\.gov\.pt$/.test(h)
+            && !/(^|\.)workers\.dev$/.test(h)
+            && !/^api\.calisthenics-spots\.pt$/.test(h)))]""")
         verificar('e a app só contacta os domínios que a privacidade nomeia',
                   fora == [], repr(fora))
         c.js("document.getElementById('ficha-fechar').click()")

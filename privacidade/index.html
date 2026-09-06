@@ -11,7 +11,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="/calisthenics-spots/assets/img/pino.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/calisthenics-spots/assets/css/app.css?v=7b9a22ff">
+<link rel="stylesheet" href="/calisthenics-spots/assets/css/app.css?v=06d1412e">
 </head>
 <body>
 <header class="topo">
@@ -60,11 +60,35 @@
   (<code>tiles.openfreemap.org</code>). Se ligares a vista de satélite, vai
   buscar as ortofotos à <strong>Direção-Geral do Território</strong>
   (<code>cartografia.dgterritorio.gov.pt</code>), que é também de onde vem a
-  vista aérea de cada ficha. São estes dois, e mais nenhum. Como em qualquer
-  imagem carregada de outro domínio, esses servidores vêem o endereço IP do teu
-  aparelho — é assim que a internet funciona, não é uma escolha nossa de
-  recolher nada. Nenhum deles põe cookies. Se ficares só na lista, os mosaicos
-  do mapa nem chegam a ser pedidos.</p>
+  vista aérea de cada ficha. Como em qualquer imagem carregada de outro domínio,
+  esses servidores vêem o endereço IP do teu aparelho — é assim que a internet
+  funciona, não é uma escolha nossa de recolher nada. Nenhum deles põe cookies.
+  Se ficares só na lista, os mosaicos do mapa nem chegam a ser pedidos.</p>
+  <p>E há um terceiro, que é nosso: a <strong>API das contribuições</strong>, num
+  servidor <strong>Cloudflare</strong> com a base de dados presa à jurisdição da
+  União Europeia. É contactada quando abres o mapa, para saber o que mudou desde
+  a última actualização, e quando envias ou confirmas um sítio. Não põe cookies.
+  <a href="#o-que-guardamos">O que lá fica guardado está explicado a seguir</a>.</p>
+
+  <h2 id="o-que-guardamos">O que fica guardado quando contribuis</h2>
+  <p>Enquanto só consultas o mapa, <strong>não é escrito nada no teu aparelho</strong>
+  além do tema claro/escuro, se o tiveres mudado — e isso nunca sai daí.</p>
+  <p>No instante em que carregas em «enviar» pela primeira vez, o teu telemóvel
+  cria uma <strong>assinatura anónima</strong>: 32 bytes ao acaso. O segredo fica
+  no aparelho; para o servidor vai só um resumo criptográfico dele. Serve para
+  duas coisas e mais nenhuma: não deixares confirmar o mesmo sítio duas vezes, e
+  poderes apagar o que enviaste. Podes deitá-la fora a qualquer momento limpando
+  os dados do site — perdes a ligação ao que enviaste, e mais nada.</p>
+  <p>Do lado do servidor guarda-se o que escreveste (a coordenada, os aparelhos
+  que marcaste, o nome e a nota, se os escreveste) e um <strong>resumo do teu
+  endereço IP com um sal que muda todos os dias</strong>. O resumo serve para
+  travar quem tenta encher o mapa de lixo, deixa de servir para o que quer que
+  seja no dia seguinte, e nunca é ligado à contribuição publicada. O endereço IP
+  em si não é guardado. O fundamento é o interesse legítimo em manter o serviço
+  utilizável (artigo 6.º, n.º 1, alínea f do RGPD).</p>
+  <p><strong>Não há contadores de visitas, nem estatísticas, nem nada parecido</strong>
+  — nem sequer alojados por nós. É por isso que não há aviso de cookies: não há
+  cookies nenhumas.</p>
   <p>Tudo o resto — a folha de estilos, o código, a biblioteca do mapa e o ficheiro
   com os sítios — é servido deste mesmo site. Não há CDN de terceiros, não há
   tipos de letra do Google, não há widgets sociais.</p>
@@ -86,7 +110,7 @@
   <p>Não sendo recolhido nenhum dado pessoal por este site, não há nada para
   consultar, corrigir ou apagar. Ainda assim, se tiveres uma dúvida ou quiseres
   reportar um problema, abre um assunto no
-  <a href="https://github.com/renatovalente5/calisthenics-spots/issues" rel="noopener">repositório do projecto</a>.</p>
+  <a href="mailto:privacidade@calisthenics-spots.pt">privacidade@calisthenics-spots.pt</a>.</p>
 
   <h2>Aviso sobre o equipamento</h2>
   <div class="aviso" style="margin-bottom:1.2rem">
@@ -105,7 +129,7 @@
   donativos —, esta página é actualizada antes da mudança entrar em vigor, e
   passará também a ser obrigatório publicar aqui a identificação completa do
   responsável. Hoje não é o caso.</p>
-  <p style="color:var(--ink-muted);font-size:var(--t-sm)">Actualizado a 6 de setembro de 2026.</p>
+  <p style="color:var(--ink-muted);font-size:var(--t-sm)">Actualizado a 7 de setembro de 2026.</p>
 </main>
 
 <footer class="rodape">
@@ -150,7 +174,7 @@
     <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a> e
     <a href="https://openmaptiles.org/" rel="noopener">OpenMapTiles</a>.</p>
     <p>O Calisthenics Spots é gratuito, não tem publicidade, não usa cookies e não recolhe
-    dados de quem o visita. Última actualização dos dados: 6 de setembro de 2026.</p>
+    dados de quem o visita. Última actualização dos dados: 7 de setembro de 2026.</p>
   </div>
 </footer>
 </body>

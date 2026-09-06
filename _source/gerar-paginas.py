@@ -228,6 +228,14 @@ def main():
         print(f'  {nome} -> {os.path.relpath(destino, RAIZ)}')
         escritas += 1
 
+    # A CONSULTA AO OVERPASS VIAJA COM O SITE. A página «Sobre» promete que a
+    # consulta está publicada linha a linha; antes apontava para o repositório,
+    # e mandar quem usa a aplicação para o GitHub de quem a faz não é caminho.
+    import shutil
+    shutil.copyfile(os.path.join(RAIZ, '_source', 'overpass.txt'),
+                    os.path.join(RAIZ, 'consulta.txt'))
+    print('  overpass.txt -> consulta.txt')
+
     print(f'\n{escritas} páginas. {vals["N_SPOTS"]} sítios, '
           f'{vals["N_CONCELHOS"]} concelhos, {vals["N_BARRAS"]} com barras confirmadas.')
 

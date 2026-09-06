@@ -772,3 +772,112 @@ button, input, select { font: inherit; color: inherit; }
 /* Desligado e NÃO escondido: quem chegou aqui tem de perceber que o botão
    existe e porque não funciona ainda. */
 .botao--desligado { opacity: .45; cursor: not-allowed; }
+
+/* ----------------------------------------------- envio de um sítio novo */
+/* A caixa que abre depois de a mira escolher o ponto. É um diálogo a sério —
+   `aria-modal` não faz nada sozinho, por isso o foco vai lá para dentro ao
+   abrir e volta ao botão de origem ao fechar (ver abrirEnvio/fecharEnvio). */
+.envio {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: end center;
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  padding: 0;
+}
+@media (min-width: 700px) { .envio { place-items: center; padding: 1.5rem; } }
+.envio__caixa {
+  position: relative; width: min(34rem, 100%);
+  max-height: min(92vh, 46rem); overflow-y: auto;
+  background: var(--surface); color: var(--ink);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 1.4rem 1.2rem 1.2rem;
+  box-shadow: var(--sombra-lg);
+}
+@media (min-width: 700px) { .envio__caixa { border-radius: var(--r-lg); } }
+.envio__titulo { margin: 0 2rem .15rem 0; font-size: var(--t-lg); }
+.envio__coord {
+  margin: 0 0 1rem; font-size: var(--t-xs); color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.envio__grupo { border: 0; padding: 0; margin: 0 0 .9rem; }
+.envio__grupo legend {
+  padding: 0; font-size: var(--t-sm); font-weight: 700; color: var(--ink);
+}
+.envio__ajuda { margin: .1rem 0 .55rem; font-size: var(--t-xs); color: var(--ink-muted); }
+.envio__mais { margin: 0 0 .9rem; }
+.envio__mais summary {
+  cursor: pointer; font-size: var(--t-sm); color: var(--brand); font-weight: 650;
+  padding: .3rem 0;
+}
+.envio__mais[open] summary { margin-bottom: .5rem; }
+.envio__campo { display: block; margin: 0 0 .8rem; }
+.envio__campo > span {
+  display: block; font-size: var(--t-sm); font-weight: 650; margin-bottom: .25rem;
+}
+.envio__campo em { font-weight: 400; color: var(--ink-muted); font-style: normal; }
+.envio__campo input, .envio__campo textarea {
+  width: 100%; padding: .55rem .7rem; font: inherit; font-size: var(--t-sm);
+  color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line-campo, var(--line)); border-radius: var(--r-sm);
+}
+.envio__campo input:focus-visible, .envio__campo textarea:focus-visible {
+  outline: 2px solid var(--brand); outline-offset: 1px;
+}
+.envio__turnstile:not(:empty) { margin: 0 0 .8rem; }
+.envio__letra-pequena {
+  margin: 0 0 .9rem; font-size: var(--t-xs); line-height: 1.5; color: var(--ink-muted);
+}
+.envio__erro {
+  margin: 0 0 .7rem; padding: .5rem .7rem; border-radius: var(--r-sm);
+  background: var(--erro-soft, var(--surface-2)); color: var(--erro, var(--ink));
+  font-size: var(--t-sm);
+}
+.envio__botoes { display: flex; gap: .5rem; }
+.envio__botoes .botao { flex: 1 1 0; justify-content: center; }
+
+/* As caixas de aparelhos. Alvos grandes: isto usa-se de pé, num parque, com
+   uma mão — não sentado a uma secretária. */
+.escolhas { display: grid; gap: .4rem; grid-template-columns: 1fr 1fr; }
+@media (max-width: 420px) { .escolhas { grid-template-columns: 1fr; } }
+.escolha {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .55rem .6rem; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface-2); font-size: var(--t-sm); cursor: pointer;
+  min-height: 44px;
+}
+.escolha:has(input:checked) {
+  border-color: var(--brand); background: var(--brand-soft); font-weight: 650;
+}
+.escolha:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 1px; }
+.escolha input { width: 1.05rem; height: 1.05rem; accent-color: var(--brand); flex: none; }
+.escolhas--fina .escolha { padding: .4rem .5rem; min-height: 38px; font-size: var(--t-xs); }
+
+/* ------------------------------------------------------------- frescura */
+.frescura {
+  margin: 0 0 1rem; padding: .8rem .9rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.frescura--meu { border-color: var(--brand); background: var(--brand-soft); }
+.frescura__diz { margin: 0 0 .15rem; font-size: var(--t-sm); }
+.frescura__pergunta { margin: 0 0 .6rem; font-size: var(--t-xs); color: var(--ink-muted); }
+.frescura__botoes { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+.frescura__botoes .botao { flex: 1 1 auto; justify-content: center; }
+.frescura__resposta {
+  margin: .6rem 0 0; font-size: var(--t-sm); font-weight: 650; color: var(--ok);
+}
+.botao--pequeno { padding: .45rem .8rem; font-size: var(--t-xs); }
+.botao--pequeno svg { width: 15px; height: 15px; }
+
+/* ------------------------------------------------------------- obrigado */
+.obrigado {
+  position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%);
+  z-index: 80; width: min(26rem, calc(100% - 1.6rem));
+  padding: .8rem 1rem; border-radius: var(--r-md);
+  background: var(--ink); color: var(--ground);
+  font-size: var(--t-sm); line-height: 1.45;
+  box-shadow: var(--sombra-lg);
+  animation: obrigado-entra .28s ease-out;
+}
+.obrigado--sai { opacity: 0; transition: opacity .5s ease; }
+@keyframes obrigado-entra { from { opacity: 0; transform: translate(-50%, .6rem); } }
+@media (prefers-reduced-motion: reduce) { .obrigado { animation: none; } }

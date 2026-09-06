@@ -81,8 +81,13 @@ const CONFIG = {
      19-20 mostra o equipamento na ortofoto. */
   zoomDoSitio: 18,
 
-  /* Onde vão parar os sítios que faltam. O botão da mira abre um assunto aqui
-     com a coordenada já preenchida. Se um dia o repositório mudar de nome, é
-     esta linha que muda — e mais nenhuma. */
-  repo: 'https://github.com/renatovalente5/calisthenics-spots',
+  /* A API que recebe o que as pessoas sabem e as fontes não têm.
+     Vazio = a aplicação continua a funcionar, só não aceita contribuições:
+     os 887 sítios vêm de um ficheiro estático e não daqui. */
+  api: 'https://calisthenics-spots-api.renato-lima-valente-dcb.workers.dev',
+
+  /* A chave pública do Turnstile, que trava robôs sem pedir nada a ninguém.
+     Vazia = o formulário funciona na mesma; o servidor deixa passar e a
+     moderação apanha o que vier mal. */
+  turnstile: '',
 };

@@ -110,6 +110,16 @@ def base_e_dominio():
     return f'/{REPO}/', f'https://{UTILIZADOR}.github.io/{REPO}'
 
 
+def data_por_extenso(iso):
+    """«2026-09-06» -> «6 de Setembro de 2026». Aceita lixo sem estoirar: uma
+       data mal formada não deve derrubar a construção do site."""
+    try:
+        a, m, d = (int(x) for x in str(iso)[:10].split('-'))
+        return f'{d} de {MESES[m - 1]} de {a}'
+    except Exception:
+        return str(iso)[:10]
+
+
 def versao():
     """A versão É o conteúdo: os 8 primeiros dígitos de um resumo de tudo o que
        o browser guarda em cache.
@@ -152,7 +162,15 @@ def numeros():
         'N_LUZ': f'{sum(1 for x in s if x["lit"] == "yes")}',
         'N_24': f'{sum(1 for x in s if x["h24"])}',
         'N_ACESS': f'{sum(1 for x in s if x["wc"] == "yes")}',
-        'DATA': f'{hoje.day} de {MESES[hoje.month - 1]} de {hoje.year}',
+        # A DATA É A DOS DADOS, NÃO A DA CONSTRUÇÃO.
+        # Antes era `date.today()`, e isso tinha dois problemas. O pequeno: a
+        # frase diz «última actualização dos DADOS» e mostrava o dia em que
+        # alguém correu o gerador, ainda que os dados fossem de há um mês.
+        # O grande: a construção deixava de ser reproduzível à meia-noite, e a
+        # guarda do CI — «reconstruir e exigir que nada mude» — passava a falhar
+        # sempre que o commit e a verificação caíam em dias diferentes. Foi
+        # exactamente o que aconteceu.
+        'DATA': data_por_extenso(meta.get('gerado_em') or hoje.isoformat()),
         'ANO': f'{hoje.year}',
         'EXTRAIDO': meta.get('extraido_em', '') or hoje.isoformat(),
         'VERSAO': versao(),

@@ -1,0 +1,44 @@
+name: Verificar
+
+# Corre a bateria em cada envio. NÃO reconstrói só para ver se o HTML bate certo:
+# reconstrói mesmo e falha se o resultado for diferente do que está commitado —
+# senão um `data/spots.json` novo com as páginas velhas passa despercebido, e o
+# site publica «798 sítios» ao lado de uma lista com 812.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guardas sobre os dados
+        run: python3 _source/testar-dados.py
+
+      - name: Reconstruir as páginas e exigir que nada mude
+        run: |
+          python3 _source/gerar-paginas.py
+          if ! git diff --quiet; then
+            echo "::error::As páginas construídas não batem certo com as commitadas."
+            echo "Corre 'python3 _source/gerar-paginas.py' e faz commit do resultado."
+            git diff --stat
+            exit 1
+          fi
+
+      - name: Servidor local
+        run: |
+          python3 -m http.server 4600 &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:4600/ >/dev/null && break
+            sleep 0.5
+          done
+
+      - name: Conduzir a aplicação num Chrome a sério
+        run: python3 _source/testar-app.py --porta 4600
+
+      - name: Não pode haver ligações mortas
+        run: python3 _source/testar-ligacoes.py

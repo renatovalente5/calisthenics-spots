@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Falta um sítio? — Barra Fixe</title>
+<meta name="description" content="Como acrescentar barras que faltam, confirmar o equipamento de um sítio ou corrigir um erro no Barra Fixe.">
+<link rel="canonical" href="https://barrafixe.pt/contribuir/">
+<meta name="theme-color" content="#F5F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161A" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Falta um sítio? — Barra Fixe">
+<meta property="og:description" content="Três formas de melhorar o mapa, da mais rápida à mais completa.">
+<meta property="og:url" content="https://barrafixe.pt/contribuir/">
+<link rel="icon" href="/assets/img/pino.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/app.css?v=d3f1692d">
+</head>
+<body>
+<header class="topo">
+  <a class="marca" href="/" aria-label="Barra Fixe, página inicial">
+    <svg class="marca__pino" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" fill-rule="evenodd" d="M12 1.6c-4.7 0-8.5 3.8-8.5 8.5 0 6.2 8.5 12.3 8.5 12.3s8.5-6.1 8.5-12.3c0-4.7-3.8-8.5-8.5-8.5zM7.6 7.4H16.4V15.6H14.3V9.3H9.7V15.6H7.6Z"/>
+    </svg>
+    <span class="marca__nome">Barra <b>Fixe</b></span>
+  </a>
+  <span style="flex:1 1 auto"></span>
+  <a class="botao botao--fantasma" href="/" style="height:36px;font-size:.8125rem">Ver o mapa</a>
+</header>
+
+<main class="texto">
+  <h1>Falta um sítio?</h1>
+  <p class="sub">Há 744 sítios no Barra Fixe de que só sabemos que
+  <em>têm alguma coisa</em>. Quem lá vai é que sabe o que lá está.</p>
+
+  <div class="aviso" style="margin-bottom:1.6rem">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg>
+    <span><strong>O que corrigires não fica só aqui.</strong> Os dados do Barra Fixe
+    vêm do OpenStreetMap, o mapa livre do mundo. Uma barra que marques lá aparece
+    depois aqui — e também no Organic Maps, no Komoot, no Strava e em dezenas de
+    outras aplicações. É por isso que preferimos mandar-te lá em vez de guardar as
+    correcções só para nós.</span>
+  </div>
+
+  <h2>1. O mais rápido: deixar uma nota no mapa</h2>
+  <p>Não precisas de saber editar mapas nem de perceber de etiquetas. Basta deixar
+  um recado no sítio certo, e alguém da comunidade trata do resto.</p>
+  <ol>
+    <li>Abre a ficha do sítio aqui no Barra Fixe e carrega em
+      <strong>«Corrigir no OpenStreetMap»</strong> — abre o mapa já centrado no
+      local certo.</li>
+    <li>Escreve o que viste, em português mesmo. Por exemplo:
+      <em>«Tem duas barras fixas de alturas diferentes, umas paralelas e uma
+      escada horizontal. Piso de borracha. Tem candeeiro.»</em></li>
+    <li>Carrega em <strong>Adicionar</strong>. Não é preciso conta para deixar uma
+      nota, embora com conta seja mais fácil acompanhar.</li>
+  </ol>
+  <p>Se o sítio nem sequer existe no mapa,
+  <a href="https://www.openstreetmap.org/note/new" rel="noopener">abre uma nota
+  em qualquer ponto</a> e arrasta o alfinete para onde estão as barras.</p>
+
+  <h2>2. O mais útil: a aplicação StreetComplete</h2>
+  <p>Se te apetece mesmo dar uma ajuda séria, o
+  <a href="https://streetcomplete.app/" rel="noopener">StreetComplete</a> (Android,
+  gratuito e livre) transforma o mapeamento num jogo de perguntas: mostra-te um
+  ponto de interrogação em cima do parque e pergunta coisas como «que aparelhos
+  há aqui?» ou «isto é iluminado à noite?». Respondes com dois toques e a edição
+  entra directamente no OpenStreetMap, sem teres de perceber nada de etiquetas.</p>
+  <p>É a forma mais eficiente de passar sítios de «por confirmar» para «barras
+  confirmadas» — a etiqueta que precisamos é <code>fitness_station</code> em cada
+  aparelho.</p>
+
+  <h2>3. O mais completo: editar o mapa</h2>
+  <p>Com uma conta no OpenStreetMap podes editar directamente no navegador com o
+  editor iD. Para um parque de calistenia, o essencial é:</p>
+  <div class="tabela-rolar">
+  <table>
+    <thead><tr><th>Etiqueta</th><th>Para quê</th></tr></thead>
+    <tbody>
+      <tr><td><code>leisure=fitness_station</code></td><td>Marca o aparelho ou a área de exercício.</td></tr>
+      <tr><td><code>fitness_station=horizontal_bar</code></td><td>Barra fixa — a etiqueta que mais falta em Portugal.</td></tr>
+      <tr><td><code>fitness_station=parallel_bars</code></td><td>Barras paralelas.</td></tr>
+      <tr><td><code>fitness_station=horizontal_ladder</code></td><td>Escada horizontal.</td></tr>
+      <tr><td><code>fitness_station=rings</code></td><td>Argolas.</td></tr>
+      <tr><td><code>fitness_station=wall_bars</code></td><td>Espaldar.</td></tr>
+      <tr><td><code>lit=yes</code> · <code>surface=…</code> · <code>opening_hours=24/7</code></td>
+        <td>Iluminação, piso e horário — os filtros do Barra Fixe vivem disto.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Se um parque tiver vários aparelhos, marca cada um com o seu nó. O Barra Fixe
+  agrupa-os sozinho num só sítio quando estão a menos de 75 metros —
+  <a href="/sobre/">explicado aqui</a>.</p>
+
+  <h2>Encontraste um erro no Barra Fixe?</h2>
+  <p>Se o problema não é dos dados mas do site — um nome mal escolhido, um sítio
+  que aparece duas vezes, um botão que não funciona —, isso é connosco:</p>
+  <p><a class="botao" href="https://github.com/renatovalente5/barra-fixe/issues/new" rel="noopener">
+    Abrir um assunto no GitHub</a></p>
+
+  <h2>E fotografias?</h2>
+  <p>Não alojamos fotografias, para manter o site sem custos e sem moderação de
+  conteúdo enviado por terceiros. Se quiseres partilhar imagens de um parque, o
+  <a href="https://panoramax.fr/" rel="noopener">Panoramax</a> e a
+  <a href="https://commons.wikimedia.org/" rel="noopener">Wikimedia Commons</a>
+  são plataformas abertas onde ficam disponíveis para toda a gente — e com licença
+  livre, ao contrário do Instagram.</p>
+</main>
+
+<footer class="rodape">
+  <div class="rodape__grelha">
+    <div>
+      <h4>Barra Fixe</h4>
+      <ul>
+        <li><a href="/">Mapa e lista</a></li>
+        <li><a href="/sobre/">Como isto funciona</a></li>
+        <li><a href="/contribuir/">Falta um sítio?</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Dados</h4>
+      <ul>
+        <li><a href="https://www.openstreetmap.org/" rel="noopener">OpenStreetMap</a></li>
+        <li><a href="https://geodados-cml.hub.arcgis.com/" rel="noopener">Lisboa Aberta — CML</a></li>
+        <li><a href="https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop" rel="noopener">CAOP — DGT</a></li>
+        <li><a href="https://github.com/renatovalente5/barra-fixe" rel="noopener">Código no GitHub</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="/privacidade/">Privacidade</a></li>
+        <li><a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Licença dos dados (ODbL)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="rodape__fim">
+    <p>Dados dos sítios do <strong>OpenStreetMap</strong>, disponibilizados sob a
+    <a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Open Database License (ODbL)</a>
+    — © contribuidores do OpenStreetMap. Em Lisboa, complementados com os
+    <strong>Equipamentos de Fitness</strong> da <strong>Câmara Municipal de Lisboa</strong>
+    (<a href="https://geodados-cml.hub.arcgis.com/" rel="noopener">Lisboa Aberta</a>, CC0).
+    Concelhos e distritos da Carta Administrativa
+    Oficial de Portugal (CAOP), da Direção-Geral do Território. Mosaicos do mapa por
+    <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a> e
+    <a href="https://openmaptiles.org/" rel="noopener">OpenMapTiles</a>.</p>
+    <p>O Barra Fixe é gratuito, não tem publicidade, não usa cookies e não recolhe
+    dados de quem o visita. Última actualização dos dados: 6 de setembro de 2026.</p>
+  </div>
+</footer>
+</body>
+</html>

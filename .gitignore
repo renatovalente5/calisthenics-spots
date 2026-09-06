@@ -1,0 +1,6 @@
+.DS_Store
+_source/bruto/
+_source/caop-municipios.geojson
+_site/
+node_modules/
+_capturas/

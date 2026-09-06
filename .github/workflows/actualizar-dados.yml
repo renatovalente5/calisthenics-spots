@@ -1,0 +1,62 @@
+name: Actualizar dados do OpenStreetMap
+
+# Vai buscar os dados outra vez e abre um PULL REQUEST — não faz commit directo
+# no main. O OpenStreetMap é editável por qualquer pessoa: um vandalismo, ou uma
+# consulta que o Overpass sirva pela metade, entrariam no site sem ninguém ver.
+# Com PR, alguém olha para o diff antes.
+on:
+  schedule:
+    - cron: '17 4 1 * *'      # dia 1 de cada mês, 4h17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recolher do Overpass e da CAOP
+        run: python3 _source/recolher.py
+
+      - name: Gerar os sítios
+        run: python3 _source/gerar-spots.py
+
+      - name: Guardas sobre os dados
+        run: python3 _source/testar-dados.py
+
+      - name: Quanto é que mudou
+        id: diff
+        run: |
+          ANTES=$(git show HEAD:data/spots.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['spots'] if isinstance(d,dict) else d))")
+          DEPOIS=$(python3 -c "import json; d=json.load(open('data/spots.json')); print(len(d['spots']))")
+          echo "antes=$ANTES" >> $GITHUB_OUTPUT
+          echo "depois=$DEPOIS" >> $GITHUB_OUTPUT
+          # Uma queda de mais de 15 % não é o país a perder parques: é a consulta
+          # a vir pela metade. Melhor falhar do que publicar um site amputado.
+          python3 - <<PY
+          antes, depois = $ANTES, $DEPOIS
+          if antes and depois < antes * 0.85:
+              raise SystemExit(f"ERRO: passou de {antes} para {depois} sítios (-{100-depois*100//antes} %). "
+                               "Provavelmente a consulta ao Overpass veio incompleta.")
+          PY
+
+      - name: Reconstruir as páginas
+        run: python3 _source/gerar-paginas.py
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "dados: actualizar do OpenStreetMap"
+          branch: dados/actualizacao
+          delete-branch: true
+          title: "Dados: ${{ steps.diff.outputs.antes }} → ${{ steps.diff.outputs.depois }} sítios"
+          body: |
+            Recolha automática do OpenStreetMap.
+
+            **${{ steps.diff.outputs.antes }} → ${{ steps.diff.outputs.depois }} sítios.**
+
+            Antes de aceitar, olha para o diff de `data/spots.json`: sítios que
+            desaparecem podem ser vandalismo no OSM, e não parques demolidos.

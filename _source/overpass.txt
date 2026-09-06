@@ -1,0 +1,67 @@
+// A CONSULTA AO OVERPASS. Correr:  python3 _source/recolher.py
+//
+// O QUE APANHA, e porquê cada ramo:
+//
+//   leisure=fitness_station  — o ramo principal. Em Portugal são 1455 elementos,
+//     mas atenção: a esmagadora maioria são NÓS, um por APARELHO, não um por
+//     parque. Um «circuito de manutenção» com 17 máquinas são 17 nós. É por isso
+//     que o passo seguinte agrupa por proximidade; sem isso o site mostrava 1477
+//     resultados para ~800 sítios.
+//
+//   fitness_station=*  — apanha aparelhos etiquetados sem o leisure. São poucos
+//     mas são exactamente os que interessam: quem se dá ao trabalho de escrever
+//     `fitness_station=horizontal_bar` está a marcar uma barra fixa.
+//
+//   sport=calisthenics  — só 4 no país inteiro, mas é a etiqueta mais explícita
+//     que existe. Nunca descartar.
+//
+//   leisure=fitness_centre + outdoor=yes  — os «parques de street workout» que
+//     alguém mapeou como ginásio ao ar livre.
+//
+//   playground=exercise  — equipamento de exercício dentro de parques infantis.
+//
+// O QUE NÃO ESTÁ AQUI, de propósito:
+//   · leisure=fitness_centre SEM outdoor=yes — são ginásios fechados, pagos.
+//     O site é sobre treinar na rua, de graça;
+//   · sport=fitness sozinho — 1082 elementos, e sem o leisure a maioria são
+//     ginásios comerciais;
+//   · leisure=pitch — campos de jogos, não têm barras.
+[out:json][timeout:300];
+area["ISO3166-1"="PT"][admin_level=2]->.pt;
+(
+  nwr["leisure"="fitness_station"](area.pt);
+  nwr["fitness_station"](area.pt);
+  nwr["sport"~"calisthenics"](area.pt);
+  nwr["leisure"="fitness_centre"]["outdoor"="yes"](area.pt);
+  nwr["playground"="exercise"](area.pt);
+);
+out center tags;
+---
+// A SEGUNDA CONSULTA: o CONTEXTO de onde sai o NOME de cada sítio.
+//
+// PORQUÊ. Só 140 dos 1477 aparelhos têm `name`, e desses a maioria é o nome da
+// MÁQUINA — «Abdominais», «Flexões de Braços», «Barras Paralelas». Nenhum serve
+// de nome a um sítio. O howtocalisthenics.com resolve isto gerando nomes por
+// máquina («Outdoor Gym - Tver - Tver - C…») e o resultado é ilegível.
+//
+// Aqui o nome sai do LUGAR: o parque, o jardim ou a praça que contém o sítio.
+// `out bb` dá a caixa envolvente sem a geometria toda — 2,9 MB em vez de dezenas.
+[out:json][timeout:300];
+area["ISO3166-1"="PT"][admin_level=2]->.pt;
+(
+  way["leisure"~"^(park|garden|recreation_ground|common|pitch|sports_centre|nature_reserve)$"]["name"](area.pt);
+  relation["leisure"~"^(park|garden|recreation_ground|common|sports_centre)$"]["name"](area.pt);
+  way["landuse"="recreation_ground"]["name"](area.pt);
+  way["place"="square"]["name"](area.pt);
+  node["place"="square"]["name"](area.pt);
+);
+out bb tags;
+---
+// A TERCEIRA: as LOCALIDADES, para quando não há parque nenhum com nome.
+// «Zambujeira do Mar» diz mais a um português do que uma coordenada.
+[out:json][timeout:180];
+area["ISO3166-1"="PT"][admin_level=2]->.pt;
+(
+  node["place"~"^(city|town|village|suburb|neighbourhood|quarter|hamlet|locality)$"]["name"](area.pt);
+);
+out;

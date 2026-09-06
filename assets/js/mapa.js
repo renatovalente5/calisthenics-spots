@@ -375,9 +375,9 @@ const Mapa = (() => {
     return {
       type: 'FeatureCollection',
       features: spots.map(s => ({
-        type: 'Feature', id: s.i,
+        type: 'Feature', id: s.id,
         geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
-        properties: { i: s.i, esc: s.esc },
+        properties: { i: s.id, esc: s.esc },
       })),
     };
   }
@@ -406,7 +406,7 @@ const Mapa = (() => {
 
     definirPontos(spots) {
       estado.spots = spots;
-      estado.porId = new Map(spots.map(s => [s.i, s]));
+      estado.porId = new Map(spots.map(s => [s.id, s]));
       if (!estado.pronto) return;
       if (estado.condutor === 'google') pontosGoogle(spots);
       else {
@@ -445,7 +445,7 @@ const Mapa = (() => {
         if (!estado.marcadores) return;
         estado.marcadores.forEach(m => {
           const s = m.sitio;
-          const activo = s && s.i === i;
+          const activo = s && s.id === i;
           const ic = m.getIcon();
           m.setIcon(Object.assign({}, ic, {
             scale: activo ? 12 : (s && s.esc === 1 ? 9 : 7),

@@ -40,7 +40,6 @@ RODAPE = """<footer class="rodape">
         <li><a href="https://www.openstreetmap.org/" rel="noopener">OpenStreetMap</a></li>
         <li><a href="https://dados.gov.pt/" rel="noopener">dados.gov.pt</a></li>
         <li><a href="https://www.dgterritorio.gov.pt/cartografia/cartografia-tematica/caop" rel="noopener">CAOP — DGT</a></li>
-        <li><a href="https://github.com/renatovalente5/calisthenics-spots" rel="noopener">Código no GitHub</a></li>
       </ul>
     </div>
     <div>

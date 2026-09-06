@@ -115,6 +115,7 @@ const E = {
 
 const estado = {
   spots: [],
+  porId: new Map(),
   vistos: [],
   zonas: null,          // carregadas só quando alguém procura
   zonaActiva: null,
@@ -190,13 +191,16 @@ async function arrancar() {
 
   const lista = Array.isArray(dados) ? dados : (dados.spots || []);
   estado.meta = Array.isArray(dados) ? null : dados.meta;
-  estado.spots = lista.map((s, i) => Object.assign({}, s, {
-    i,
+  // O `id` VEM DO FICHEIRO e é estável entre construções — ver a nota sobre
+  // identificadores em _source/gerar-spots.py. Antes era a posição no array, e
+  // isso fazia a ligação partilhada de ontem abrir hoje outro parque.
+  estado.spots = lista.map(s => Object.assign({}, s, {
     // Dois índices: `forte` é o que uma pessoa escreve quando quer um sítio;
     // `fraco` ajuda a encontrar mas não manda na ordem dos resultados.
     forte: normalizar([s.nome, s.loc, s.con].join(' ')),
     fraco: normalizar([s.dis, regiaoProcuravel(s.reg), s.rua].join(' ')),
   }));
+  estado.porId = new Map(estado.spots.map(s => [s.id, s]));
 
   contarFiltros();
   medirBarras();
@@ -212,9 +216,9 @@ async function arrancar() {
 function abrirDoEndereco() {
   const m = location.hash.match(/s=(\d+)/);
   if (!m) return;
-  const s = estado.spots[+m[1]];
+  const s = estado.porId.get(+m[1]);
   if (!s) return;
-  if (estado.activo === s.i && E.ficha.dataset.aberta === '1') return;
+  if (estado.activo === s.id && E.ficha.dataset.aberta === '1') return;
   abrirFicha(s, { voar: true });
 }
 
@@ -360,7 +364,7 @@ function cartao(s) {
   const ap = s.ap.filter(a => NUCLEO.includes(a)).slice(0, 3);
   const onde = [s.loc && s.loc !== s.nome ? s.loc : null, s.con].filter(Boolean).join(' · ');
 
-  li.innerHTML = `<button class="cartao${s.esc === 1 ? ' cartao--top' : ''}" type="button" data-i="${s.i}">
+  li.innerHTML = `<button class="cartao${s.esc === 1 ? ' cartao--top' : ''}" type="button" data-i="${s.id}">
     <span class="cartao__topo">
       <span class="cartao__nome">${esc(s.nome)}</span>
       ${s.km != null ? `<span class="cartao__dist">${formatarDistancia(s.km)}</span>` : ''}
@@ -425,7 +429,7 @@ function limparTudo() {
 /* -------------------------------------------------------------------- ficha */
 
 function abrirFicha(s, { voar = false } = {}) {
-  estado.activo = s.i;
+  estado.activo = s.id;
   const e = ESCALAO[s.esc];
   const nucleo = s.ap.filter(a => NUCLEO.includes(a));
   const extras = s.ap.filter(a => APARELHOS[a] && !NUCLEO.includes(a));
@@ -544,12 +548,12 @@ function abrirFicha(s, { voar = false } = {}) {
   if (p) p.addEventListener('click', () => partilhar(s));
 
   for (const b of $$('.cartao')) {
-    b.setAttribute('aria-current', b.dataset.i === String(s.i) ? 'true' : 'false');
+    b.setAttribute('aria-current', b.dataset.i === String(s.id) ? 'true' : 'false');
   }
 
   if (voar || innerWidth >= 900) Mapa.irPara(s.lat, s.lon, CONFIG.zoomDoSitio);
-  Mapa.marcarActivo(s.i);
-  history.replaceState(null, '', '#s=' + s.i);
+  Mapa.marcarActivo(s.id);
+  history.replaceState(null, '', '#s=' + s.id);
 }
 
 /* ------------------------------------------------------------------ a MIRA */
@@ -635,7 +639,7 @@ function fecharFicha() {
 }
 
 async function partilhar(s) {
-  const url = location.origin + location.pathname + '#s=' + s.i;
+  const url = location.origin + location.pathname + '#s=' + s.id;
   const dados = { title: `${s.nome} — Calisthenics Spots`, text: `Barras em ${s.nome}, ${s.con}`, url };
   if (navigator.share) {
     try { await navigator.share(dados); return; } catch (err) {
@@ -950,7 +954,7 @@ function ligarBotoes() {
   E.lista.addEventListener('click', ev => {
     const b = ev.target.closest('.cartao');
     if (!b) return;
-    const s = estado.spots[+b.dataset.i];
+    const s = estado.porId.get(+b.dataset.i);
     if (s) {
       abrirFicha(s, { voar: true });
       if (innerWidth < 900) mudarVista('mapa');

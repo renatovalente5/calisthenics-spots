@@ -425,6 +425,71 @@ def dentro(x, y, anel):
     return d
 
 
+# --------------------------------------------------------- IDENTIFICADORES
+# PORQUE ISTO EXISTE. Até aqui, cada sítio era conhecido pela sua POSIÇÃO na
+# lista — a ligação partilhável `#s=5` queria dizer «o sexto sítio do ficheiro».
+# Basta a recolha seguinte trazer um parque novo em Albufeira para o `#s=5` de
+# ontem passar a abrir outro sítio qualquer. Aconteceu: entre 845 e 887 sítios,
+# TODAS as ligações partilhadas mudaram de significado em silêncio.
+#
+# E com contribuições de utilizadores por cima, isto deixa de ser um incómodo e
+# passa a ser corrupção de dados: uma fotografia enviada para «o sítio 5» ficaria
+# amanhã colada ao parque do lado.
+#
+# A SOLUÇÃO. Um ficheiro que só cresce, `_source/ids.json`, com a última posição
+# conhecida de cada identificador. A cada construção, procura-se para cada sítio
+# o identificador mais próximo dentro de RAIO_ID; se houver, é reutilizado e a
+# posição actualiza-se (assim o identificador acompanha o parque quando lhe
+# acrescentam aparelhos e o centro se desloca). Se não houver, dá-se um novo.
+# Um identificador nunca é reatribuído a outro sítio, mesmo que o sítio original
+# desapareça — senão uma fotografia velha ressuscitava colada ao vizinho.
+RAIO_ID = 90     # metros; maior que o de agrupamento (75), para o centro poder andar
+IDS = os.path.join(RAIZ, '_source', 'ids.json')
+
+
+def carregar_ids():
+    if os.path.exists(IDS):
+        d = json.load(open(IDS, encoding='utf-8'))
+        return d.get('proximo', 1), d.get('sitios', [])
+    return 1, []
+
+
+def atribuir_ids(spots):
+    proximo, conhecidos = carregar_ids()
+    # Grelha de ~200 m para não comparar tudo com tudo.
+    grelha = collections.defaultdict(list)
+    for k, c in enumerate(conhecidos):
+        grelha[(int(c['lat'] * 550), int(c['lon'] * 550))].append(k)
+    usados, novos = set(), 0
+    for s in spots:
+        cx, cy = int(s['lat'] * 550), int(s['lon'] * 550)
+        melhor, melhor_d = None, RAIO_ID + 1
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for k in grelha.get((cx + dx, cy + dy), ()):
+                    if k in usados:
+                        continue
+                    d = dist((s['lat'], s['lon']), (conhecidos[k]['lat'], conhecidos[k]['lon']))
+                    if d < melhor_d:
+                        melhor, melhor_d = k, d
+        if melhor is not None:
+            usados.add(melhor)
+            s['id'] = conhecidos[melhor]['id']
+            conhecidos[melhor]['lat'] = s['lat']
+            conhecidos[melhor]['lon'] = s['lon']
+        else:
+            s['id'] = proximo
+            conhecidos.append({'id': proximo, 'lat': s['lat'], 'lon': s['lon']})
+            proximo += 1
+            novos += 1
+    json.dump({'proximo': proximo, 'sitios': conhecidos},
+              open(IDS, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    orfaos = len(conhecidos) - len(usados) - novos
+    print(f'identificadores: {len(spots)} sítios, {novos} novos, '
+          f'{orfaos} guardados de sítios que já cá não estão')
+    return spots
+
+
 def main():
     for f in ('aparelhos', 'contexto', 'localidades'):
         if not os.path.exists(os.path.join(BRUTO, f + '.json')):
@@ -786,6 +851,7 @@ def main():
         x['fontes'] = sorted(set(x.get('fontes') or (['OSM'] if x['osm'] else [])))
 
     spots.sort(key=lambda s: (s['con'] or 'zz', s['nome'] or 'zz'))
+    atribuir_ids(spots)
 
     # O AVISO DE LICENÇA VIAJA COM O FICHEIRO. A ODbL obriga a que quem receba a
     # base de dados derivada saiba de onde ela vem e sob que licença está — e

@@ -56,6 +56,22 @@ exigir('todas as coordenadas caem em Portugal', not fora,
 exigir('as coordenadas estão arredondadas a 5 casas',
        all(round(x['lat'], 5) == x['lat'] and round(x['lon'], 5) == x['lon'] for x in s))
 
+# O IDENTIFICADOR ESTÁVEL. Sem esta guarda, uma construção que perdesse o
+# _source/ids.json renumerava tudo em silêncio e todas as ligações partilhadas
+# — e todas as contribuições referidas a um sítio — passavam a apontar para o
+# parque do lado.
+exigir('todo o sítio tem identificador inteiro',
+       all(isinstance(x.get('id'), int) for x in s),
+       str([x['nome'] for x in s if not isinstance(x.get('id'), int)][:3]))
+exigir('os identificadores não se repetem',
+       len({x.get('id') for x in s}) == len(s),
+       f"{len(s) - len({x.get('id') for x in s})} repetidos")
+_ids = os.path.join(RAIZ, '_source', 'ids.json')
+exigir('o registo dos identificadores existe e cobre todos os sítios',
+       os.path.exists(_ids) and
+       {x['id'] for x in s} <= {y['id'] for y in json.load(open(_ids, encoding='utf-8'))['sitios']},
+       'falta _source/ids.json ou tem menos sítios do que os dados')
+
 exigir('nenhum sítio partilha coordenada com outro',
        len({(x['lat'], x['lon']) for x in s}) == len(s),
        f"{len(s) - len({(x['lat'], x['lon']) for x in s})} repetidas")

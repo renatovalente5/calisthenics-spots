@@ -349,16 +349,17 @@ def main():
         # Por isso este carrega mesmo no pino, com coordenadas do ecrã.
         alvo = c.js("""(()=>{
           const v = estado.vistos;
-          // Um sítio onde a confusão antiga daria um sítio DIFERENTE, e não
-          // apenas «indefinido»: assim a falha é visível no nome da ficha.
+          // Um sítio cujo ID é DIFERENTE da sua posição na lista filtrada: se
+          // alguém voltar a indexar por posição, este abre o sítio errado e o
+          // nome na ficha denuncia-o.
           for (let k = v.length - 1; k >= 0; k--) {
-            const errado = v[v[k].i];
+            const errado = v[k].id < v.length ? v[v[k].id] : null;
             if (errado && errado.nome !== v[k].nome)
-              return {i: v[k].i, nome: v[k].nome, lat: v[k].lat, lon: v[k].lon,
+              return {i: v[k].id, nome: v[k].nome, lat: v[k].lat, lon: v[k].lon,
                       seria: errado.nome};
           }
           return null; })()""")
-        verificar('há um sítio onde a troca de índices se notaria',
+        verificar('há um sítio onde confundir id com posição se notaria',
                   bool(alvo), 'nenhum candidato — o teste não provaria nada')
         if alvo:
             c.js("document.getElementById('ficha-fechar').click()")

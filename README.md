@@ -89,7 +89,6 @@ Três formas, todas gratuitas e sem chave nenhuma:
   do Território** (CC-BY), ~25 cm/px, centradas no ponto. Vê-se o pórtico das
   barras.
 - **Street View** — ligação para o Google Maps ao nível do chão.
-- **Fotos de rua** — Mapillary e Panoramax, fotografia aberta.
 
 A ortofoto vem como `<img>` e não como camada do mapa, e não foi escolha:
 o servidor da DGT manda `Access-Control-Allow-Origin` **duas vezes**, e a

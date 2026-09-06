@@ -77,6 +77,8 @@ const Mapa = (() => {
     mapa: null,
     pronto: false,
     spots: [],
+    // Índice POR ID. Ver `definirPontos`: sem ele, o clique abria outro sítio.
+    porId: new Map(),
     activo: null,
     satelite: false,
     aoClicar: null,
@@ -190,6 +192,10 @@ const Mapa = (() => {
         zIndex: s.esc === 1 ? 3 : 1,
       });
       m.addListener('click', () => { if (estado.aoClicar) estado.aoClicar(s); });
+      // O sítio fica agarrado ao marcador. Procurá-lo depois pelo título dava
+      // o sítio errado sempre que dois parques partilham o nome — e partilham:
+      // há dezenas de «Parque Municipal».
+      m.sitio = s;
       return m;
     });
     if (window.MarkerClusterer) {
@@ -321,7 +327,11 @@ const Mapa = (() => {
 
     mapa.on('click', 'pontos', ev => {
       const f = ev.features[0];
-      const s = estado.spots[f.properties.i];
+      // POR ID, NUNCA POR POSIÇÃO. O `i` é a posição do sítio na lista
+      // COMPLETA; o que chega ao mapa é a lista FILTRADA. Indexar uma com o
+      // índice da outra abria sempre um sítio ao lado — e o desvio crescia
+      // com cada filtro ligado.
+      const s = estado.porId.get(f.properties.i);
       if (s && estado.aoClicar) estado.aoClicar(s);
     });
     mapa.on('click', 'grupos', async ev => {
@@ -396,6 +406,7 @@ const Mapa = (() => {
 
     definirPontos(spots) {
       estado.spots = spots;
+      estado.porId = new Map(spots.map(s => [s.i, s]));
       if (!estado.pronto) return;
       if (estado.condutor === 'google') pontosGoogle(spots);
       else {
@@ -432,9 +443,8 @@ const Mapa = (() => {
       if (!estado.pronto) return;
       if (estado.condutor === 'google') {
         if (!estado.marcadores) return;
-        const cores = coresDosPinos();
         estado.marcadores.forEach(m => {
-          const s = estado.spots.find(x => x.nome === m.getTitle());
+          const s = m.sitio;
           const activo = s && s.i === i;
           const ic = m.getIcon();
           m.setIcon(Object.assign({}, ic, {
@@ -522,6 +532,17 @@ const Mapa = (() => {
       const so = m(b.getSouth(), b.getWest());
       const ne = m(b.getNorth(), b.getEast());
       return [so[0], so[1], ne[0], ne[1]].join(',');
+    },
+
+    /* Onde está um sítio no ecrã, em pixels do contentor do mapa. A bateria
+       precisa disto para carregar MESMO em cima do pino, com um evento de rato
+       verdadeiro. Chamar por dentro a função que trata do clique testaria o
+       nada: o que estava partido era justamente a tradução do pino para o
+       sítio, e essa só acontece quando o clique vem do mapa. */
+    _pixelDe(lat, lon) {
+      if (!estado.pronto || estado.condutor !== 'livre') return null;
+      const p = estado.mapa.project([lon, lat]);
+      return [Math.round(p.x), Math.round(p.y)];
     },
 
     _quantosPontos() {

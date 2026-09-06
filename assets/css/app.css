@@ -683,13 +683,15 @@ button, input, select { font: inherit; color: inherit; }
    peças são ligações para o Google Maps — satélite e Street View — que são
    grátis e não precisam de chave. As fotografias, quando existem, juntam-se
    à frente. */
+/* GRELHA QUE CABE, e não um carrossel. Enquanto eram quatro peças, escondê-las
+   fora do ecrã era inevitável; com três cabem todas, e uma ligação que não se
+   vê é uma ligação que ninguém carrega. Se um dia houver fotografias, mudam de
+   linha em vez de desaparecerem para o lado. */
 .imagens {
-  display: grid; grid-auto-flow: column; grid-auto-columns: 46%;
-  gap: .5rem; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding-bottom: .3rem; scrollbar-width: thin;
+  display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
 }
 .imagem {
-  position: relative; scroll-snap-align: start;
+  position: relative;
   aspect-ratio: 4 / 3; border-radius: var(--r-sm); overflow: hidden;
   background: var(--surface-2); border: 1px solid var(--line);
   text-decoration: none; display: block;
@@ -725,8 +727,10 @@ button, input, select { font: inherit; color: inherit; }
 
 /* A ortofoto do sítio ocupa mais espaço que os botões: é a peça que responde
    à pergunta «isto tem mesmo barras?». Os botões ficam ao lado, mais estreitos. */
-.imagens { grid-auto-columns: 38%; }
-.imagem--orto { grid-column: span 2; }
+.imagem--orto { grid-column: 1 / -1; }
+/* Os dois botões são botões, não cartões: baixos, lado a lado, debaixo da
+   imagem que interessa. */
+.imagem--acao { aspect-ratio: 5 / 2; }
 .imagem--orto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .imagem__etiqueta {
   position: absolute; left: 0; bottom: 0;

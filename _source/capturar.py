@@ -90,11 +90,13 @@ def main():
                          esperar_mapa=True,
                          antes="document.querySelector('.cartao').click()")
                 # Uma ficha com a ortofoto — a peça que responde à pergunta
-                # «isto tem mesmo barras?». Escolhe-se um sítio CONFIRMADO.
+                # «isto tem mesmo barras?». Escolhe-se OUTRO sítio confirmado:
+                # a ordem por omissão já põe um confirmado em primeiro, e pedir
+                # «o primeiro confirmado» dava duas capturas do mesmo sítio.
                 capturar(c, base + caminho, f'{nome}-ortofoto', 1440, 900, 2,
                          esperar_mapa=True,
                          antes=("[...document.querySelectorAll('.cartao')]"
-                                ".find(b=>b.classList.contains('cartao--top')).click()"),
+                                ".filter(b=>b.classList.contains('cartao--top'))[3].click()"),
                          espera_extra=5.0)
                 # E a pesquisa por zona, com o concelho assinalado no mapa.
                 capturar(c, base + caminho, f'{nome}-zona', 1440, 900, 2,

@@ -279,8 +279,6 @@ def main():
         verificar('a ficha diz de que fonte vem o sítio',
                   c.js("/OpenStreetMap|Câmara Municipal/.test("
                        "document.getElementById('ficha-corpo').textContent)"))
-        verificar('a ficha avisa para verificar o equipamento',
-                  c.js("/[Vv]erifica o estado/.test(document.getElementById('ficha-corpo').textContent)"))
         verificar('a ficha aponta para o OpenStreetMap com o objecto certo',
                   c.js("""(()=>{const as=[...document.querySelectorAll('#ficha a')];
                     return as.some(a=>/openstreetmap\\.org\\/(node|way|relation)\\/\\d+/.test(a.href));})()"""))
@@ -342,6 +340,65 @@ def main():
         verificar('a app não é mais alta que o ecrã',
                   c.js('document.body.scrollHeight <= window.innerHeight + 2'),
                   c.js("document.body.scrollHeight+' > '+window.innerHeight"))
+
+        print('\n— carregar num pino tem de abrir AQUELE sítio —')
+        # PORQUE ESTE TESTE EXISTE. Durante semanas, carregar num ponto do mapa
+        # abria a ficha de outro sítio qualquer. Nenhum dos 66 testes anteriores
+        # deu por isso: todos abriam a ficha pela LISTA. O caminho do mapa —
+        # pino desenhado -> evento de rato -> sítio — nunca era percorrido.
+        # Por isso este carrega mesmo no pino, com coordenadas do ecrã.
+        alvo = c.js("""(()=>{
+          const v = estado.vistos;
+          // Um sítio onde a confusão antiga daria um sítio DIFERENTE, e não
+          // apenas «indefinido»: assim a falha é visível no nome da ficha.
+          for (let k = v.length - 1; k >= 0; k--) {
+            const errado = v[v[k].i];
+            if (errado && errado.nome !== v[k].nome)
+              return {i: v[k].i, nome: v[k].nome, lat: v[k].lat, lon: v[k].lon,
+                      seria: errado.nome};
+          }
+          return null; })()""")
+        verificar('há um sítio onde a troca de índices se notaria',
+                  bool(alvo), 'nenhum candidato — o teste não provaria nada')
+        if alvo:
+            c.js("document.getElementById('ficha-fechar').click()")
+            c.js(f"Mapa.irPara({alvo['lat']}, {alvo['lon']}, 17)")
+            verificar('o mapa chega ao sítio e desagrupa o pino',
+                      esperar(c, "Mapa._zoom() >= 16.5"), c.js('Mapa._zoom()'))
+            time.sleep(0.9)
+            clicou = c.js("""(()=>{
+              const p = Mapa._pixelDe(%f, %f);
+              if (!p) return 'sem pixel';
+              const cv = document.querySelector('#mapa canvas');
+              const r = cv.getBoundingClientRect();
+              const x = r.left + p[0], y = r.top + p[1];
+              if (x < r.left || x > r.right || y < r.top || y > r.bottom)
+                return 'fora do ecrã';
+              for (const tipo of ['mousedown', 'mouseup', 'click'])
+                cv.dispatchEvent(new MouseEvent(tipo, {clientX: x, clientY: y,
+                  bubbles: true, cancelable: true, view: window, button: 0}));
+              return 'ok';})()""" % (alvo['lat'], alvo['lon']))
+            verificar('o pino recebe um clique de rato a sério', clicou == 'ok', str(clicou))
+            verificar('e o clique abre uma ficha',
+                      esperar(c, "document.getElementById('ficha').dataset.aberta==='1'", 6))
+            aberto = c.js("document.getElementById('ficha-titulo').textContent")
+            verificar('e é a ficha DAQUELE sítio, não a do vizinho',
+                      aberto == alvo['nome'],
+                      f"abriu «{aberto}», devia abrir «{alvo['nome']}» "
+                      f"(a troca antiga dava «{alvo['seria']}»)")
+            verificar('e o endereço passa a apontar para esse sítio',
+                      c.js("location.hash") == '#s=' + str(alvo['i']),
+                      c.js("location.hash"))
+            c.js("document.getElementById('ficha-fechar').click()")
+
+        print('\n— o que se tirou fica tirado —')
+        c.js("document.querySelector('.cartao').click()")
+        time.sleep(0.4)
+        verificar('não há ligação para o Mapillary em ficha nenhuma',
+                  c.js("!document.querySelector('#ficha a[href*=\"mapillary\"]')"))
+        verificar('nem o aviso óbvio de verificar as barras',
+                  c.js("!/não é por nós mantido/.test(document.getElementById('ficha').textContent)"))
+        c.js("document.getElementById('ficha-fechar').click()")
 
         print('\n— sem WebGL: a lista tem de aguentar-se sozinha —')
         c.abrir('about:blank', espera=0.3)

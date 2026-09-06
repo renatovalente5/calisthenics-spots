@@ -445,10 +445,6 @@ function abrirFicha(s, { voar = false } = {}) {
   // ver o sítio de cima e ver o sítio ao nível do chão. Ambos sem chave.
   const satelite = `https://www.google.com/maps/@?api=1&map_action=map&center=${s.lat},${s.lon}&zoom=20&basemap=satellite`;
   const pano = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lon}`;
-  // O Mapillary é fotografia de rua ABERTA (CC-BY-SA) e a página deles abre
-  // numa coordenada sem chave nenhuma. Onde o Street View não chegou, muitas
-  // vezes passou lá alguém de bicicleta com uma câmara.
-  const mapillary = `https://www.mapillary.com/app/?lat=${s.lat}&lng=${s.lon}&z=18&focus=photo`;
   const osm = `https://www.openstreetmap.org/note/new#map=19/${s.lat}/${s.lon}`;
 
   E.fichaCorpo.innerHTML = `
@@ -480,10 +476,6 @@ function abrirFicha(s, { voar = false } = {}) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="9" r="3.2"/><path d="M4.5 19c1.6-3.4 4.3-5 7.5-5s5.9 1.6 7.5 5"/></svg>
           <span>Street View</span>
         </a>
-        <a class="imagem imagem--acao" href="${mapillary}" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5.5" width="18" height="14" rx="2.4"/><circle cx="12" cy="12.5" r="3.4"/><path d="M8 5.5 9.2 3h5.6l1.2 2.5"/></svg>
-          <span>Fotos de rua</span>
-        </a>
       </div>
       <p class="ficha__nota">A vista aérea é a ortofotografia oficial da
       <a href="https://www.dgterritorio.gov.pt/" target="_blank" rel="noopener">Direção-Geral
@@ -510,14 +502,6 @@ function abrirFicha(s, { voar = false } = {}) {
         <span>${esc(e.diz)} ${s.n > 1
           ? `Estão registados <strong>${s.n} aparelhos</strong> aqui.`
           : 'Está registado <strong>1 aparelho</strong> aqui.'}</span>
-      </div>
-    </div>
-
-    <div class="ficha__seccao">
-      <div class="aviso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4M12 17v.5"/></svg>
-        <span>Este equipamento não é nosso e não é por nós mantido.
-        <strong>Verifica o estado das barras antes de as usares.</strong></span>
       </div>
     </div>
 

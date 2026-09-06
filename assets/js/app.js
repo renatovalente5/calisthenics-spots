@@ -550,45 +550,6 @@ function abrirFicha(s, { voar = false } = {}) {
   if (voar || innerWidth >= 900) Mapa.irPara(s.lat, s.lon, CONFIG.zoomDoSitio);
   Mapa.marcarActivo(s.i);
   history.replaceState(null, '', '#s=' + s.i);
-  procurarImagens(s);
-}
-
-/* As FOTOGRAFIAS. O Panoramax é aberto, sem chave, e as imagens são
-   CC-BY-SA — mas a cobertura em Portugal é escassa (uma em dez, medido).
-   Por isso o cartão nunca DEPENDE de haver foto: os botões de satélite e de
-   Street View estão lá sempre, e a fotografia, quando existe, junta-se a eles.
-   Falhar em silêncio é de propósito: uma imagem que não veio não é um erro que
-   valha a pena mostrar a ninguém. */
-async function procurarImagens(s) {
-  const alvo = $('#imagens');
-  if (!alvo) return;
-  const meu = s.i;
-  const d = 0.0012;                       // ~130 m
-  const bbox = [s.lon - d, s.lat - d, s.lon + d, s.lat + d].join(',');
-  try {
-    const r = await fetch(`https://api.panoramax.xyz/api/search?bbox=${bbox}&limit=3`,
-      { mode: 'cors' });
-    if (!r.ok) return;
-    const j = await r.json();
-    if (estado.activo !== meu) return;    // a pessoa já abriu outra ficha
-    const fotos = (j.features || []).map(f => {
-      const a = (f.assets || {});
-      const u = (a.thumb || a.sd || a.hd || {}).href;
-      return u ? { url: u, id: f.id } : null;
-    }).filter(Boolean);
-    if (!fotos.length) return;
-    const html = fotos.map(f => `<a class="imagem" href="https://api.panoramax.xyz/#focus=pic&pic=${esc(f.id)}"
-        target="_blank" rel="noopener noreferrer">
-        <img src="${esc(f.url)}" alt="Fotografia de rua perto de ${esc(s.nome)}" loading="lazy" decoding="async">
-      </a>`).join('');
-    alvo.insertAdjacentHTML('afterbegin', html);
-    const nota = alvo.parentElement.querySelector('.ficha__nota');
-    if (nota) {
-      nota.innerHTML = 'Fotografias de rua do <a href="https://panoramax.xyz/" ' +
-        'target="_blank" rel="noopener">Panoramax</a> (CC-BY-SA). Vê também de ' +
-        'satélite e no Street View para confirmares as barras.';
-    }
-  } catch (err) { /* sem rede, sem foto, sem drama */ }
 }
 
 function traduzirOsm(id) {

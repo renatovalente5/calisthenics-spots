@@ -398,6 +398,30 @@ def main():
                   c.js("!document.querySelector('#ficha a[href*=\"mapillary\"]')"))
         verificar('nem o aviso óbvio de verificar as barras',
                   c.js("!/não é por nós mantido/.test(document.getElementById('ficha').textContent)"))
+        # Nada de Panoramax: era um pedido a um terceiro que ia buscar fotos de
+        # rua a api.panoramax.xyz. Verifica-se pela REDE, e não só pelo texto —
+        # o pedido podia partir sem nunca chegar a pôr nada no ecrã.
+        time.sleep(1.2)
+        verificar('a ficha não vai buscar nada ao Panoramax',
+                  c.js("!(performance.getEntriesByType('resource')"
+                       ".some(e=>/panoramax/i.test(e.name)))"),
+                  c.js("performance.getEntriesByType('resource')"
+                       ".filter(e=>/panoramax/i.test(e.name)).map(e=>e.name).join(', ')"))
+        # E, já agora, a lista COMPLETA de terceiros. A página de privacidade
+        # nomeia dois domínios; se algum dia entrar um terceiro sem ninguém
+        # dar por isso, a página passa a mentir. É este teste que a defende.
+        # Só http(s): o MapLibre cria o seu operário a partir de um `blob:`,
+        # e o `host` de um blob é a string vazia — que não é domínio nenhum
+        # nem sai do aparelho.
+        fora = c.js("""[...new Set(performance.getEntriesByType('resource')
+          .map(e => new URL(e.name))
+          .filter(u => /^https?:$/.test(u.protocol))
+          .map(u => u.host)
+          .filter(h => h !== location.host
+            && !/(^|\.)openfreemap\.org$/.test(h)
+            && !/(^|\.)dgterritorio\.gov\.pt$/.test(h)))]""")
+        verificar('e a app só contacta os domínios que a privacidade nomeia',
+                  fora == [], repr(fora))
         c.js("document.getElementById('ficha-fechar').click()")
 
         print('\n— sem WebGL: a lista tem de aguentar-se sozinha —')

@@ -112,8 +112,13 @@ async function turnstileValido(ficha, pedido, env) {
   // fechadura.
   if (!env.TURNSTILE_SEGREDO) return { ok: false, porque: 'servidor por configurar', fechado: true };
   if (!ficha) return { ok: false, porque: 'sem ficha' };
+  // A FICHA DE ENSAIO da Cloudflare, para a bateria poder percorrer o envio de
+  // ponta a ponta. Só é aceite quando o segredo de ensaio está configurado —
+  // e o segredo de ensaio nunca está em produção.
+  const ensaio = env.TURNSTILE_SEGREDO.startsWith('1x0000');
   const corpo = new FormData();
   corpo.append('secret', env.TURNSTILE_SEGREDO);
+  if (ensaio) corpo.append('__ensaio', '1');
   corpo.append('response', ficha);
   const ip = pedido.headers.get('CF-Connecting-IP');
   if (ip) corpo.append('remoteip', ip);

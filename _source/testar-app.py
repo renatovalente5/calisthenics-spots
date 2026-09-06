@@ -475,6 +475,52 @@ def main():
         time.sleep(0.4)
         verificar('cancelar fecha a mira',
                   c.js("document.getElementById('mira').hidden"))
+        # ENVIAR A SÉRIO, DE PONTA A PONTA. Corre contra o Worker de ensaio
+        # (`?teste=1` troca a API e a chave do Turnstile pelas de ensaio) —
+        # nunca contra produção. Sem isto, o caminho mais importante da
+        # aplicação ficava por percorrer: um Chrome sem interface é, e deve
+        # ser, tratado como suspeito pelo Turnstile a sério.
+        import urllib.request as _u
+        try:
+            _u.urlopen('http://localhost:8799/v1/saude', timeout=3).read()
+            ha_worker = True
+        except Exception:
+            ha_worker = False
+        if not ha_worker:
+            print('\n— envio de ponta a ponta: SALTADO (sem Worker de ensaio em :8799) —')
+        else:
+            print('\n— enviar um sítio, de ponta a ponta —')
+            c.abrir(base + '/?teste=1', espera=3.0)
+            esperar(c, "typeof estado!=='undefined' && estado.spots.length>0")
+            verificar('a bateria fala com o Worker de ensaio, nunca com produção',
+                      c.js('CONFIG.api') == 'http://localhost:8799', c.js('CONFIG.api'))
+            c.js("document.getElementById('v-mapa').click()")
+            esperar(c, """(()=>{const q=document.querySelector('#mapa canvas');
+              return q && q.getBoundingClientRect().width>200;})()""")
+            c.js("document.getElementById('falta').click(); Mapa.irPara(40.9012,-8.5567,17)")
+            esperar(c, 'Mapa._zoom() >= 16.5')
+            time.sleep(1.4)
+            c.js("document.getElementById('mira-abrir').click()")
+            time.sleep(0.8)
+            verificar('o Turnstile emite ficha',
+                      esperar(c, """(()=>{try{
+                        return !!window.turnstile.getResponse(turnstileWidget)
+                      }catch(e){return false}})()""", 30))
+            c.js("""document.querySelectorAll('#envio-nucleo input')[0].click();
+              document.querySelectorAll('#envio-nucleo input')[1].click();""")
+            c.js("document.getElementById('envio-enviar').click()")
+            verificar('o envio conclui',
+                      esperar(c, "document.getElementById('envio').hidden", 25),
+                      c.js("document.getElementById('envio-erro').textContent"))
+            # A REGRA QUE FAZ ISTO FUNCIONAR: só de caixas, publica-se já.
+            verificar('um envio só de caixas entra no mapa de toda a gente na hora',
+                      esperar(c, """(()=>{const o=document.querySelector('.obrigado');
+                        return o && /já está no mapa/i.test(o.textContent)})()""", 10),
+                      c.js("(document.querySelector('.obrigado')||{}).textContent"))
+            verificar('e SÓ AGORA nasce a assinatura no aparelho',
+                      c.js("!!localStorage.getItem('cs:assinatura')"))
+            c.abrir(base + '/', espera=2.0)
+            esperar(c, "typeof estado!=='undefined' && estado.spots.length>0")
         print('\n— o que se tirou fica tirado —')
         c.js("document.querySelector('.cartao').click()")
         time.sleep(0.4)

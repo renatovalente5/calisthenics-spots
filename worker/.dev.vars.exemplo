@@ -1,0 +1,6 @@
+# Copiar para `.dev.vars` (que está no .gitignore) antes de correr `wrangler dev`.
+# São segredos de ENSAIO: a chave 1x0000… do Turnstile aceita qualquer ficha e
+# só funciona com a chave pública de ensaio correspondente.
+TURNSTILE_SEGREDO = "1x0000000000000000000000000000000AA"
+SAL = "sal-de-ensaio-nao-usar-em-producao"
+CHAVE_MESTRA = "chave-de-ensaio"

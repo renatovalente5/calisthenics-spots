@@ -84,7 +84,13 @@ CABECA_TEXTO = """<header class="topo">
 
 SW_MODELO = os.path.join(RAIZ, '_source', 'paginas-sw.js')
 FICHEIROS_DA_VERSAO = [
-    'assets/css/app.css', 'assets/js/app.js',
+    # O `config.js` TEM de estar aqui. Ficou de fora e o efeito só se via mais
+    # tarde: mudar a chave do Turnstile ou o endereço da API não mexia na versão,
+    # o `?v=` ficava igual, e quem já tinha visitado o site continuava a receber
+    # o config velho da cache — com a chave errada e o envio partido, sem
+    # nenhum sinal de que algo tinha mudado.
+    'assets/css/app.css', 'assets/js/app.js', 'assets/js/config.js',
+    'assets/js/comunidade.js',
     'assets/vendor/maplibre-gl.js', 'assets/vendor/maplibre-gl.css',
     'data/spots.json',
 ]

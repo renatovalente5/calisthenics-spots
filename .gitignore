@@ -4,3 +4,7 @@ _source/caop-municipios.geojson
 _site/
 node_modules/
 _capturas/
+worker/.dev.vars
+
+# Estado local do wrangler dev: base de dados de ensaio, caches, blobs.
+worker/.wrangler/

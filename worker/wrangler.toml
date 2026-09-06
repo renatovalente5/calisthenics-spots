@@ -16,4 +16,4 @@ enabled = true
 
 [vars]
 # A origem do site. Só daqui se aceitam pedidos com credenciais.
-ORIGENS = "http://localhost:4600,https://calisthenics-spots.pt,https://www.calisthenics-spots.pt,https://renatovalente5.github.io"
+ORIGENS = "http://localhost:4600,http://127.0.0.1:4600,https://calisthenics-spots.pt,https://www.calisthenics-spots.pt,https://renatovalente5.github.io"

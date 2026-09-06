@@ -84,10 +84,21 @@ const CONFIG = {
   /* A API que recebe o que as pessoas sabem e as fontes não têm.
      Vazio = a aplicação continua a funcionar, só não aceita contribuições:
      os 887 sítios vêm de um ficheiro estático e não daqui. */
-  api: 'https://calisthenics-spots-api.renato-lima-valente-dcb.workers.dev',
+  api: (location.search.includes('teste=1')
+    ? 'http://localhost:8799'
+    : 'https://calisthenics-spots-api.renato-lima-valente-dcb.workers.dev'),
 
   /* A chave pública do Turnstile, que trava robôs sem pedir nada a ninguém.
-     Vazia = o formulário funciona na mesma; o servidor deixa passar e a
-     moderação apanha o que vier mal. */
-  turnstile: '0x4AAAAAAEqpOppleLaNDL78',
+     Vazia = o servidor RECUSA os envios: desde a auditoria, a verificação falha
+     fechada e nunca aberta.
+
+     `?teste=1` no endereço troca-a pela chave de ensaio da Cloudflare, que
+     passa sempre. Serve para a bateria conseguir percorrer o envio de ponta a
+     ponta — um Chrome sem interface é, e deve ser, tratado como suspeito pelo
+     Turnstile a sério, e sem isto o caminho mais importante da aplicação ficava
+     por testar. A chave de ensaio só vale contra o segredo de ensaio, por isso
+     não abre nada em produção. */
+  turnstile: (location.search.includes('teste=1')
+    ? '1x00000000000000000000AA'
+    : '0x4AAAAAAEqpOppleLaNDL78'),
 };

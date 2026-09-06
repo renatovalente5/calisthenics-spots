@@ -37,6 +37,25 @@ jobs:
             sleep 0.5
           done
 
+      # O WORKER DE ENSAIO. Sem ele a bateria salta o envio de ponta a ponta —
+      # e esse é o caminho mais importante da aplicação. Usa a chave de ensaio
+      # do Turnstile (1x0000…), que aceita qualquer ficha: um Chrome sem
+      # interface é, e deve ser, tratado como suspeito pelo Turnstile a sério.
+      # A base é a LOCAL do wrangler; nada disto toca em produção.
+      - name: Worker de ensaio, com base de dados local
+        run: |
+          cd worker
+          cp .dev.vars.exemplo .dev.vars
+          npx --yes wrangler@4 d1 execute calisthenics-spots --local --file esquema.sql
+          npx --yes wrangler@4 dev --port 8799 --local > /tmp/worker.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8799/v1/saude >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8799/v1/saude || (cat /tmp/worker.log; echo "::warning::Worker de ensaio não subiu; a bateria salta o envio.")
+        env:
+          CLOUDFLARE_API_TOKEN: ""
+
       - name: Conduzir a aplicação num Chrome a sério
         run: python3 _source/testar-app.py --porta 4600
 

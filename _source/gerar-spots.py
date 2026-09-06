@@ -302,9 +302,17 @@ APARELHOS_CONHECIDOS = set(BARRAS.values()) | {'suspensao'}
 # `fitness_station`, ou puseram-no no `name`. «Barras Paralelas», «Barras
 # fixas», «Espaldar e Agilidade», «equipamento_de_treino_da_falésia_-_street_workout».
 # Ler isso é de graça e rende sítios que se perderiam.
+# QUATRO BURACOS TAPADOS, todos encontrados a ler o texto livre dos elementos
+# que ficavam em «por confirmar»:
+#   · «parque calistenico» não casava com `calistenia` nem com `calisthenics`;
+#   · quem mapeia em inglês escreve «horizontal bars», «vertical bars»,
+#     «monkey bars» — e nada disso tem a palavra «barra»;
+#   · «push ups» é flexões e não estava em lado nenhum;
+#   · «dominadas» estava, «dominada» no singular não.
 RE_BARRA = re.compile(r'\b(barra|barras|elevacoes|elevacao|flexoes|espaldar|paralelas|'
-                      r'street ?workout|calistenia|calisthenics|trepar|suspens|argolas|'
-                      r'escada horizontal|dominadas|pull ?up|chin ?up|dip)\b')
+                      r'street ?workout|calisten\w*|calisth\w*|trepar|suspens|argolas|'
+                      r'escada horizontal|dominada\w*|pull ?ups?|chin ?ups?|push ?ups?|'
+                      r'monkey ?bars?|horizontal bars?|vertical bars?|dip)\b')
 RE_MAQUINA = re.compile(r'\b(bicicleta|eliptic|remo|leg press|volante|pendul|surf|twist|'
                         r'cavalgada|esqui|passadeira|air ?walker)\b')
 
@@ -316,7 +324,7 @@ def _do_texto(s, ap):
         ap.add('espaldar')
     elif 'argola' in s:
         ap.add('argolas')
-    elif 'escada horizontal' in s:
+    elif 'escada horizontal' in s or 'monkey' in s:
         ap.add('escada_horizontal')
     elif re.search(r'\bflexoes\b', s) and 'barra' not in s:
         ap.add('flexoes')
@@ -768,6 +776,8 @@ def main():
                 'Câmara Municipal de Lisboa — Equipamentos de Fitness ao Ar Livre (CC0)',
                 'Câmara Municipal de Cascais — Circuito de Manutenção (CC-BY 4.0)',
                 'Câmara Municipal de Oeiras — Equipamentos de Jogo e Recreio (CC-BY 4.0)',
+                'Câmara Municipal da Amadora — Equipamentos de Fitness '
+                '(sem licença declarada; reutilização ao abrigo da Lei n.º 68/2021)',
             ],
             'consulta': '_source/overpass.txt',
             'extraido_em': extraido_em(),

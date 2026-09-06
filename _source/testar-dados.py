@@ -76,10 +76,14 @@ exigir('todo o sítio sem objecto do OSM veio de uma câmara',
             and not (set(x.get('fontes', [])) - {'OSM'})][:3]))
 usadas = {f for x in s for f in x.get('fontes', [])}
 exigir('a atribuição de todas as fontes municipais está declarada',
-       (not (usadas - {'OSM'})) or len(meta.get('fontes_complementares') or []) >= 3,
+       (not (usadas - {'OSM'})) or
+       len(meta.get('fontes_complementares') or []) >= len(usadas - {'OSM'}),
        f'fontes nos dados: {sorted(usadas)}')
-exigir('as fontes conhecidas são só estas quatro',
-       usadas <= {'OSM', 'CML', 'CMC', 'CMO'}, str(sorted(usadas)))
+# CMA = Amadora, CMC = Cascais, CML = Lisboa, CMO = Oeiras. Esta guarda existe
+# para que uma fonte nova não entre nos dados sem passar pela atribuição: quem
+# acrescentar um normalizador tem de vir aqui e à lista do rodapé.
+exigir('as fontes conhecidas são só estas cinco',
+       usadas <= {'OSM', 'CMA', 'CMC', 'CML', 'CMO'}, str(sorted(usadas)))
 exigir('os ids do OSM têm a forma certa (n/w/r + número)',
        all(all(o[0] in 'nwr' and o[1:].isdigit() for o in x.get('osm', [])) for x in s))
 

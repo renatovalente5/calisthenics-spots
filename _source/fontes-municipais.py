@@ -19,9 +19,25 @@
      · OEIRAS (CC-BY)  — 476 APARELHOS individuais, com o nome do aparelho
                          («Barras Fixas», «Barras Paralelas») e a categoria.
                          Agrupam-se por espaço, como se faz aos nós do OSM.
+     · AMADORA         — 290 aparelhos, com `Tipologia` E `Modelo`. É preciso
+                         ler os dois: a tipologia diz «Fortalecimento de tronco
+                         e membros superiores» tanto para um `Espaldar` como
+                         para um `Lat Pull`, que é uma máquina guiada. O modelo
+                         é que desempata.
+
+   A AMADORA NÃO DECLARA LICENÇA, e mesmo assim entra. Não é descuido: o
+   conjunto é publicado pela própria Divisão de Informação Geográfica da câmara
+   («CMA. DIG. Janeiro 2021») num serviço aberto, e o artigo 19.º n.º 1 da Lei
+   n.º 26/2016 — na redacção que a Lei n.º 68/2021 lhe deu — diz que «os
+   documentos administrativos cujo acesso seja autorizado […] podem ser
+   reutilizados para fins comerciais ou não comerciais». O n.º 10 do mesmo
+   artigo proíbe expressamente a administração de invocar o direito do
+   fabricante de base de dados para impedir a reutilização. Cita-se a fonte na
+   mesma, e sai daqui no dia em que a câmara o pedir.
 
    ATRIBUIÇÃO. A CC-BY obriga a citar o autor; a CC0 não obriga mas cita-se na
-   mesma. Os três estão no rodapé do site e no bloco `meta` de data/spots.json.
+   mesma. As quatro estão no rodapé do site e no bloco `meta` de
+   data/spots.json.
 """
 import json, math, os, re, sys, time, unicodedata, urllib.request
 
@@ -35,6 +51,13 @@ AGENTE = ('CalisthenicsSpots/1.0 (mapa de calistenia em Portugal; '
 # Os URLs são descobertos pela API do dados.gov.pt e não escritos à mão: o
 # ficheiro de Cascais tem a data no nome («…_20260904_172718.geojson») e muda
 # a cada actualização. Escrito à mão, partia-se sozinho dentro de um mês.
+# A Amadora não está no dados.gov.pt: publica directamente num serviço ArcGIS.
+# O endereço é estável — é o NOME do serviço, não um ficheiro com data no nome —
+# por isso aqui escreve-se, ao contrário dos de Cascais.
+AMADORA = ('https://services6.arcgis.com/ECbGJJhDv8P4i9op/arcgis/rest/services/'
+           'equipamentos_fitness/FeatureServer/0/query'
+           '?where=1%3D1&outFields=*&f=geojson')
+
 PROCURAS = [
     ('cascais-circuito', 'circuito de manutenção', 'Cascais', 'Circuito'),
     ('cascais-desportivo', 'equipamento desportivo', 'Cascais', 'Equipamento Desportivo'),
@@ -253,6 +276,69 @@ def normalizar_oeiras(features, epsg=4326):
     return saida
 
 
+def normalizar_amadora(features, epsg=4326):
+    """A Amadora dá um aparelho por linha, com `Tipologia` e `Modelo`.
+
+       LER OS DOIS, E POR ESTA ORDEM. A tipologia é uma descrição do exercício,
+       não do aparelho: «Fortalecimento de tronco e membros superiores» aparece
+       num `Espaldar`, num `Pull up` e num `Lat Pull`. Os dois primeiros são
+       calistenia; o terceiro é uma máquina guiada com pesos. Classificar pela
+       tipologia sozinha metia máquinas na lista de barras — que é exactamente
+       o que esta aplicação não pode fazer."""
+    RE_AP = [
+        (re.compile(r'barra de elevac|barras? de elevac|pull ?up|barra fixa|'
+                    r'barras? horizontais'), 'barra_fixa'),
+        # «Barra de flexões» é uma barra baixa onde se apoia o peso do corpo.
+        # Fica como barra fixa, que é o que o resto do projecto já faz com o
+        # `barra_flexao` de Cascais e com o `_do_texto` do gerar-spots.
+        (re.compile(r'barras? (?:para |de )?flexoes'), 'barra_fixa'),
+        (re.compile(r'paralelas'), 'paralelas'),
+        (re.compile(r'espaldar'), 'espaldar'),
+        (re.compile(r'argolas?'), 'argolas'),
+        # «Escada em suspensão» é a escada horizontal por onde se avança de
+        # braços. NÃO confundir com «Simulator ladder», que é um degrau para as
+        # pernas e está debaixo de «membros inferiores».
+        (re.compile(r'escada[s]? (?:ondulada )?(?:em|de) suspensao'), 'escada_horizontal'),
+        (re.compile(r'barras? para (?:escalada|escalda)|barras? de escalada'), 'escalada'),
+        (re.compile(r'flexoes de bracos|tricep'), 'flexoes'),
+        (re.compile(r'abdomin|ab board'), 'abdominais'),
+        (re.compile(r'barras? de equilibrio|barra de equilibrio|ponte de equilibrio|'
+                    r'escada de equilibrio'), 'trave'),
+        (re.compile(r'salto em barreiras|barras de saltos|postes de saltos'), 'barreiras'),
+        (re.compile(r'slalom'), 'slalom'),
+        (re.compile(r'salto ao eixo|cavalo'), 'caixa'),
+        (re.compile(r'poste de alongamentos|alongamentos - '), 'alongamento'),
+    ]
+    RE_MAQUINA = re.compile(r'patins|surf|esqui|volante|leme|remo\b|rower|bicicleta|'
+                            r'pedaleir|balanca|elevador|banco press|leg press|'
+                            r'leg extension|arm extension|arm rotation|lat pull|'
+                            r'push dorsal|pull dorsal|jogo de cintura|cintura|'
+                            r'rotacao dos antebracos|air ?walker|tai chi|rider|'
+                            r'ponei|handicap walker|aquecimento|peitorais|'
+                            r'extensao de (?:pernas|bracos)|simulat')
+    saida = []
+    for f in features:
+        p = f.get('properties') or {}
+        xy = coord(f.get('geometry'), epsg)
+        if not xy:
+            continue
+        # Um aparelho que a própria câmara marcou para recolocar não está lá.
+        tip = str(p.get('Tipologia') or '')
+        if 'recoloca' in sem_acentos(tip):
+            continue
+        texto = sem_acentos(tip + ' ' + str(p.get('Modelo') or ''))
+        ap = {nosso for r, nosso in RE_AP if r.search(texto)}
+        saida.append({
+            'nome': None,   # o campo de local é uma MORADA, não um nome de sítio
+            'lon': round(xy[0], 5), 'lat': round(xy[1], 5),
+            'ap': sorted(ap), 'nega': [],
+            'maquina': bool(RE_MAQUINA.search(texto)) and not ap,
+            'rua': (p.get('Localizaca') or '').strip() or None,
+            'fonte': 'CMA',
+        })
+    return saida
+
+
 def normalizar_lisboa(features, epsg=4326):
     saida = []
     for f in features:
@@ -278,6 +364,7 @@ NORMALIZADORES = {
     'cascais-circuito': normalizar_cascais,
     'oeiras-equipamentos': normalizar_oeiras,
     'lisboa-fitness': normalizar_lisboa,
+    'amadora-fitness': normalizar_amadora,
 }
 
 
@@ -288,6 +375,13 @@ def main():
     if not achados:
         print('nenhum conjunto encontrado; nada mudou.')
         return
+
+    achados['amadora-fitness'] = {
+        'url': AMADORA,
+        'titulo': 'Equipamentos de fitness da Amadora',
+        'org': 'Câmara Municipal da Amadora — Divisão de Informação Geográfica',
+        'licenca': 'sem licença declarada (reutilização ao abrigo da Lei n.º 68/2021)',
+    }
 
     saida = {'meta': {}, 'pontos': []}
     for chave, info in achados.items():

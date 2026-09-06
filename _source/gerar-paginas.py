@@ -54,11 +54,13 @@ RODAPE = """<footer class="rodape">
   <div class="rodape__fim">
     <p>Dados dos sítios do <strong>OpenStreetMap</strong>, disponibilizados sob a
     <a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Open Database License (ODbL)</a>
-    — © contribuidores do OpenStreetMap. Complementados com dados abertos de três
+    — © contribuidores do OpenStreetMap. Complementados com dados abertos de quatro
     câmaras: <strong>Lisboa</strong> (Equipamentos de Fitness ao Ar Livre, CC0),
     <strong>Cascais</strong> (Circuito de Manutenção,
-    <a href="https://creativecommons.org/licenses/by/4.0/deed.pt" rel="noopener">CC-BY</a>) e
-    <strong>Oeiras</strong> (Equipamentos de Jogo e Recreio, CC-BY) —
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.pt" rel="noopener">CC-BY</a>),
+    <strong>Oeiras</strong> (Equipamentos de Jogo e Recreio, CC-BY) e
+    <strong>Amadora</strong> (Equipamentos de Fitness, sem licença declarada —
+    <a href="{{BASE}}sobre/">porquê</a>) —
     são estas que dizem que aparelhos há em cada sítio.
     Concelhos e distritos da Carta Administrativa
     Oficial de Portugal (CAOP), da Direção-Geral do Território. Mosaicos do mapa por

@@ -20,7 +20,7 @@
         vêm como respostas opacas: guardá-los enche a quota sem se poder sequer
         verificar se são válidos. Ficam de fora, e o browser trata deles.
 */
-const VERSAO = 'c1d7f649';
+const VERSAO = '040e041e';
 const BASE = '/calisthenics-spots/';
 const CACHE = 'calisthenics-spots-' + VERSAO;
 

@@ -28,6 +28,45 @@ import json, math, os, re, sys, unicodedata, collections, datetime
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRUTO = os.path.join(RAIZ, '_source', 'bruto')
 DESTINO = os.path.join(RAIZ, 'data', 'spots.json')
+# TRÊS FICHEIROS, E É UMA DECISÃO DE LICENÇA — NÃO DE ARRUMAÇÃO.
+#
+# A ODbL 1.0 obriga a que qualquer «Derivative Database» saia sob ODbL. Misturar
+# os sítios do OpenStreetMap com os que as pessoas nos mandam, agrupando-os e
+# desduplicando-os, faz exactamente isso: a orientação da OSMF sobre camadas
+# horizontais diz que preencher lacunas do MESMO tipo de objecto no MESMO
+# recorte activa o share-alike, e a das bases colectivas fecha a porta ao dizer
+# que fundir com remoção de duplicados «would not be covered».
+#
+# Mas a secção 4.5 a) é a válvula: numa base COLECTIVA, a camada do OSM continua
+# ODbL e as outras não. Daí:
+#
+#   data/osm.json         ODbL 1.0   OpenStreetMap + as quatro câmaras
+#   data/comunidade.json  CC0 1.0    só envios; esquema FECHADO; zero campos
+#                                    vindos do OSM (nem id, nem rua, nem
+#                                    localidade, nem coordenada copiada)
+#   data/spots.json       ODbL 1.0   a fusão — é o que a aplicação carrega
+#
+# A independência é o que sustenta o CC0, e perde-se com um único `osm_id` ou
+# uma rua copiada de um nó. Por isso o esquema é fechado e há um teste no CI que
+# mata a construção perante qualquer chave que não esteja nesta lista.
+OSM_JSON = os.path.join(RAIZ, 'data', 'osm.json')
+COMUNIDADE_JSON = os.path.join(RAIZ, 'data', 'comunidade.json')
+FONTE_COMUNIDADE = os.path.join(RAIZ, '_source', 'sitios-da-comunidade.json')
+IDS_COMUNIDADE = os.path.join(RAIZ, '_source', 'ids-comunidade.json')
+
+# GAMA DE IDENTIFICADORES RESERVADA. Um id nascido do OpenStreetMap nunca pode
+# ser reclamado por um ponto da comunidade, e vice-versa: senão bastava enviar um
+# sítio falso a 50 metros de um real para lhe roubar o identificador — e com ele
+# as confirmações e as ligações partilhadas que apontam para lá.
+BASE_ID_COMUNIDADE = 2_000_000
+
+# Só estas chaves podem existir num registo da comunidade. `loc` e `rua` NÃO
+# estão aqui de propósito: vêm do OpenStreetMap, e um deles dentro deste ficheiro
+# tornava-o uma base derivada. `con`/`dis` podem, porque vêm da Carta
+# Administrativa da Direcção-Geral do Território, que é outra fonte.
+CHAVES_COMUNIDADE = {'id', 'lat', 'lon', 'nome', 'ap', 'esc', 'n',
+                     'con', 'dis', 'reg', 'dico', 'nota', 'quem', 'quando',
+                     'cedencia', 'fontes'}
 CAOP = os.path.join(RAIZ, '_source', 'caop-municipios.geojson')
 
 # ------------------------------------------------------------- 0. DEITAR FORA
@@ -490,6 +529,143 @@ def atribuir_ids(spots):
     return spots
 
 
+def concelho_de(muns, lat, lon):
+    """Concelho, distrito, região e código DICO de uma coordenada, pela Carta
+       Administrativa Oficial. Nada disto vem do OpenStreetMap — é a Direcção-
+       Geral do Território, e é por isso que pode entrar num registo da
+       comunidade sem o contaminar."""
+    for bb, aneis, con, dis, reg, dico in muns:
+        if not (bb[0] <= lat <= bb[2] and bb[1] <= lon <= bb[3]):
+            continue
+        for anel in aneis:
+            if dentro(lon, lat, anel):
+                return con, dis, reg, dico
+    # Encostado à água. A CAOP desenha a linha de costa e um aparelho no passeio
+    # marítimo pode cair uns metros fora dela — um em São Miguel cai. Vale mais
+    # encostá-lo ao concelho mais próximo do que deixá-lo sem concelho, que é o
+    # mesmo que o esconder da procura.
+    melhor = None
+    for bb, aneis, con, dis, reg, dico in muns:
+        dlat = max(bb[0] - lat, 0, lat - bb[2]) * 111320
+        dlon = max(bb[1] - lon, 0, lon - bb[3]) * 111320 * math.cos(math.radians(lat))
+        d = math.hypot(dlat, dlon)
+        if melhor is None or d < melhor[0]:
+            melhor = (d, con, dis, reg, dico)
+    if melhor and melhor[0] <= 2000:
+        return melhor[1:]
+    return None
+
+
+def ids_da_comunidade(sitios):
+    """Identificadores estáveis para os envios, numa gama só deles.
+
+       O registo é separado do dos sítios das fontes, e é essa separação que
+       impede o sequestro: um ponto enviado nunca pode reclamar o identificador
+       de um sítio do OpenStreetMap que esteja a 50 metros — nem levar com ele as
+       confirmações e as ligações que já apontam para lá."""
+    if os.path.exists(IDS_COMUNIDADE):
+        d = json.load(open(IDS_COMUNIDADE, encoding='utf-8'))
+        proximo, conhecidos = d.get('proximo', BASE_ID_COMUNIDADE), d.get('sitios', [])
+    else:
+        proximo, conhecidos = BASE_ID_COMUNIDADE, []
+    usados = set()
+    for s in sitios:
+        melhor, melhor_d = None, RAIO_ID + 1
+        for k, c in enumerate(conhecidos):
+            if k in usados:
+                continue
+            d2 = dist((s['lat'], s['lon']), (c['lat'], c['lon']))
+            if d2 < melhor_d:
+                melhor, melhor_d = k, d2
+        if melhor is not None:
+            usados.add(melhor)
+            s['id'] = conhecidos[melhor]['id']
+            conhecidos[melhor].update(lat=s['lat'], lon=s['lon'])
+        else:
+            s['id'] = proximo
+            conhecidos.append({'id': proximo, 'lat': s['lat'], 'lon': s['lon']})
+            proximo += 1
+    json.dump({'proximo': proximo, 'sitios': conhecidos},
+              open(IDS_COMUNIDADE, 'w', encoding='utf-8'),
+              ensure_ascii=False, separators=(',', ':'))
+    return sitios
+
+
+def construir_comunidade(muns):
+    """Lê os envios e produz `data/comunidade.json` — em CC0, e sem um único
+       campo vindo do OpenStreetMap.
+
+       O concelho sai da Carta Administrativa (DGT), que é outra fonte e não
+       contamina nada. A rua e a localidade NÃO saem daqui: além de virem do
+       OSM, dar morada a um pino que ninguém reviu é o que transformaria isto
+       numa ferramenta para apontar a casa de alguém."""
+    if not os.path.exists(FONTE_COMUNIDADE):
+        return []
+    bruto = json.load(open(FONTE_COMUNIDADE, encoding='utf-8')).get('sitios', [])
+    saida = []
+    for pt in bruto:
+        if pt.get('lat') is None or pt.get('lon') is None:
+            continue
+        lat, lon = round(float(pt['lat']), 5), round(float(pt['lon']), 5)
+        ap = sorted({a for a in (pt.get('ap') or []) if a in APARELHOS_CONHECIDOS})
+        mun = concelho_de(muns, lat, lon)
+        # A mesma escada de honestidade dos outros sítios, mas a partir do que a
+        # pessoa marcou. Sem aparelho nenhum marcado, fica «por confirmar».
+        if pt.get('maquina') and not ap:
+            esc = 4
+        elif set(ap) & NUCLEO:
+            esc = 1
+        elif ap:
+            esc = 2
+        else:
+            esc = 3
+        # SEM NOME, FICA O CONCELHO. Os sítios das fontes caem para o nome da
+        # localidade quando o parque não tem nome; aqui não se pode fazer isso,
+        # porque a localidade vem do OpenStreetMap. O concelho vem da Carta
+        # Administrativa, e serve — «Valongo» diz mais a alguém do que um
+        # espaço em branco na lista.
+        nome = (pt.get('nome') or '').strip() or (mun[0] if mun else None)
+        saida.append({
+            'lat': lat, 'lon': lon,
+            'nome': nome or 'Sítio enviado por alguém',
+            'ap': ap, 'esc': esc, 'n': len(ap) or 1,
+            'con': mun[0] if mun else None,
+            'dis': mun[1] if mun else None,
+            'reg': mun[2] if mun else None,
+            'dico': mun[3] if mun else None,
+            'nota': (pt.get('nota') or '').strip() or None,
+            'quem': pt.get('quem'),
+            'quando': pt.get('quando'),
+            'cedencia': pt.get('cedencia') or 'cc0-1.0',
+            'fontes': ['COM'],
+        })
+    ids_da_comunidade(saida)
+
+    # A GUARDA, aqui e não só no CI: uma chave a mais neste ficheiro e ele deixa
+    # de poder sair em CC0. Melhor morrer na construção do que publicar errado.
+    for s in saida:
+        fora = set(s) - CHAVES_COMUNIDADE
+        if fora:
+            sys.exit(f'comunidade.json com chaves proibidas: {sorted(fora)}')
+
+    json.dump({
+        'meta': {
+            'nome': 'Calisthenics Spots — sítios enviados por quem os usa',
+            'licenca': 'CC0 1.0',
+            'licenca_url': 'https://creativecommons.org/publicdomain/zero/1.0/',
+            'porque': ('Domínio público de propósito: é a única licença que permite '
+                       'devolver estes sítios ao OpenStreetMap, de onde vem quase '
+                       'tudo o resto. Este ficheiro NÃO contém dados do '
+                       'OpenStreetMap — é independente, e é isso que o mantém '
+                       'fora da ODbL.'),
+            'gerado_em': datetime.date.today().isoformat(),
+            'total': len(saida),
+        },
+        'sitios': saida,
+    }, open(COMUNIDADE_JSON, 'w'), ensure_ascii=False, separators=(',', ':'))
+    return saida
+
+
 def main():
     for f in ('aparelhos', 'contexto', 'localidades'):
         if not os.path.exists(os.path.join(BRUTO, f + '.json')):
@@ -529,33 +705,6 @@ def main():
               f'({sum(1 for m in municipais if "barra_fixa" in m["ap_municipal"])} '
               f'com barra declarada)')
 
-    # OS SÍTIOS QUE SÓ AS PESSOAS SABEM. O OpenStreetMap tem ~900 sítios em
-    # Portugal e 129 dos 308 concelhos ficam a zero — verificado balde a balde,
-    # não é a consulta que está mal. Este ficheiro é escrito à mão, a partir dos
-    # assuntos abertos no GitHub pela mira do mapa, e entra no MESMO agrupamento
-    # que tudo o resto: um sítio que já cá esteja não fica duplicado, e os
-    # aparelhos somam-se ao que já se sabia.
-    fc = os.path.join(RAIZ, '_source', 'sitios-da-comunidade.json')
-    if os.path.exists(fc):
-        dc = json.load(open(fc, encoding='utf-8'))
-        n0 = len(municipais)
-        for i, pt in enumerate(dc.get('sitios', [])):
-            if pt.get('lat') is None or pt.get('lon') is None:
-                continue
-            municipais.append({
-                'type': 'municipal', 'id': 10 ** 6 + i,
-                'lat': round(float(pt['lat']), 5), 'lon': round(float(pt['lon']), 5),
-                'fonte': 'COM',
-                'nome_municipal': pt.get('nome'),
-                'rua_municipal': pt.get('rua'),
-                'ap_municipal': [a for a in (pt.get('ap') or [])
-                                 if a in APARELHOS_CONHECIDOS],
-                'nega_municipal': pt.get('nega') or [],
-                'maquina_municipal': bool(pt.get('maquina')),
-                'tags': {},
-            })
-        if len(municipais) > n0:
-            print(f'sítios da comunidade: {len(municipais) - n0}')
 
     pontos, elementos = [], []
     recusados = collections.Counter()
@@ -713,26 +862,7 @@ def main():
     muns = carregar_municipios()
 
     def municipio_de(lat, lon):
-        for bb, aneis, con, dis, reg, dico in muns:
-            if not (bb[0] <= lat <= bb[2] and bb[1] <= lon <= bb[3]):
-                continue
-            for anel in aneis:
-                if dentro(lon, lat, anel):
-                    return con, dis, reg, dico
-        # Encostado à água. A CAOP desenha a linha de costa e um aparelho no
-        # passeio marítimo pode cair uns metros fora dela — um em São Miguel cai.
-        # Vale mais encostá-lo ao concelho mais próximo do que deixá-lo sem
-        # concelho, que é o mesmo que o esconder da procura.
-        melhor = None
-        for bb, aneis, con, dis, reg, dico in muns:
-            dlat = max(bb[0] - lat, 0, lat - bb[2]) * 111320
-            dlon = max(bb[1] - lon, 0, lon - bb[3]) * 111320 * math.cos(math.radians(lat))
-            d = math.hypot(dlat, dlon)
-            if melhor is None or d < melhor[0]:
-                melhor = (d, con, dis, reg, dico)
-        if melhor and melhor[0] <= 2000:
-            return melhor[1:]
-        return None
+        return concelho_de(muns, lat, lon)
 
     # --- reunir cada grupo
     brutos = []
@@ -857,6 +987,23 @@ def main():
     # base de dados derivada saiba de onde ela vem e sob que licença está — e
     # quem descarrega o spots.json directamente não vê o rodapé do site. Por
     # isso a atribuição vive DENTRO do JSON, e não só na página.
+    # OS TRÊS FICHEIROS. Ver a nota no topo: é uma decisão de licença.
+    #
+    #   osm.json         — o que sai das fontes. ODbL, porque contém OSM.
+    #   comunidade.json  — o que as pessoas mandam. CC0, e independente.
+    #   spots.json       — a fusão, que é o que a aplicação carrega. ODbL.
+    #
+    # Os envios NÃO passam pelo agrupamento dos nós do OpenStreetMap. Isso era
+    # cómodo — juntava um envio ao parque que já lá estava — e era duas coisas
+    # más ao mesmo tempo: fazia o registo derivar do OSM (adeus CC0) e deixava
+    # um ponto enviado roubar o identificador de um sítio real a 50 metros,
+    # levando com ele as confirmações e as ligações partilhadas. Um envio é um
+    # sítio à parte até alguém decidir o contrário.
+    comunidade = construir_comunidade(muns)
+    if comunidade:
+        print(f'sítios da comunidade: {len(comunidade)} '
+              f'-> {os.path.relpath(COMUNIDADE_JSON, RAIZ)} (CC0)')
+
     saida = {
         'meta': {
             'nome': 'Calisthenics Spots — sítios com equipamento de exercício ao ar livre em Portugal',
@@ -872,9 +1019,14 @@ def main():
                 'Câmara Municipal de Oeiras — Equipamentos de Jogo e Recreio (CC-BY 4.0)',
                 'Câmara Municipal da Amadora — Equipamentos de Fitness '
                 '(sem licença declarada; reutilização ao abrigo da Lei n.º 68/2021)',
-                'Sítios enviados por quem os usa '
-                '(_source/sitios-da-comunidade.json, CC0)',
+                'Sítios enviados por quem os usa (data/comunidade.json, CC0 1.0) — '
+                'base independente, descarregável à parte',
             ],
+            'base_colectiva': (
+                'Este ficheiro é a fusão de duas bases independentes: '
+                'data/osm.json (ODbL 1.0) e data/comunidade.json (CC0 1.0). '
+                'A fusão sai sob ODbL; a camada da comunidade continua em CC0 '
+                'e pode ser usada à parte, sem obrigações — secção 4.5 a) da ODbL.'),
             'consulta': '_source/overpass.txt',
             'extraido_em': extraido_em(),
             'gerado_em': datetime.date.today().isoformat(),
@@ -883,6 +1035,26 @@ def main():
         'spots': spots,
     }
     os.makedirs(os.path.dirname(DESTINO), exist_ok=True)
+
+    # O ficheiro SÓ das fontes, para quem quiser a camada ODbL limpa.
+    so_osm = dict(saida)
+    so_osm['meta'] = dict(saida['meta'],
+                          nome='Calisthenics Spots — o que sai das fontes abertas',
+                          total=len(spots))
+    so_osm['meta'].pop('base_colectiva', None)
+    so_osm['spots'] = spots
+    json.dump(so_osm, open(OSM_JSON, 'w'), ensure_ascii=False, separators=(',', ':'))
+
+    # E a fusão, que é o que a aplicação carrega.
+    spots = spots + [
+        {**c, 'loc': None, 'rua': None, 'osm': [],
+         'lit': None, 'wc': None, 'h24': False, 'surf': None, 'op': None,
+         'zonas': 1}
+        for c in comunidade
+    ]
+    spots.sort(key=lambda s: (s['con'] or 'zz', s['nome'] or 'zz'))
+    saida['spots'] = spots
+    saida['meta']['total'] = len(spots)
     json.dump(saida, open(DESTINO, 'w'), ensure_ascii=False, separators=(',', ':'))
 
     cnt = collections.Counter(s['esc'] for s in spots)

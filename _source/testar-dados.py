@@ -66,11 +66,20 @@ exigir('todo o sítio tem identificador inteiro',
 exigir('os identificadores não se repetem',
        len({x.get('id') for x in s}) == len(s),
        f"{len(s) - len({x.get('id') for x in s})} repetidos")
+# DOIS REGISTOS, porque são duas gamas. Os sítios das fontes e os da comunidade
+# nunca partilham identificadores: senão bastava enviar um ponto falso a 50 m de
+# um parque real para lhe roubar o número — e com ele as confirmações e as
+# ligações partilhadas que já apontam para lá.
 _ids = os.path.join(RAIZ, '_source', 'ids.json')
-exigir('o registo dos identificadores existe e cobre todos os sítios',
-       os.path.exists(_ids) and
-       {x['id'] for x in s} <= {y['id'] for y in json.load(open(_ids, encoding='utf-8'))['sitios']},
-       'falta _source/ids.json ou tem menos sítios do que os dados')
+_ids_com = os.path.join(RAIZ, '_source', 'ids-comunidade.json')
+_conhecidos = set()
+for _f in (_ids, _ids_com):
+    if os.path.exists(_f):
+        _conhecidos |= {y['id'] for y in json.load(open(_f, encoding='utf-8'))['sitios']}
+_falta = sorted({x['id'] for x in s} - _conhecidos)
+exigir('todo o sítio tem identificador num dos dois registos',
+       os.path.exists(_ids) and not _falta,
+       f'sem registo: {_falta[:5]}')
 
 exigir('nenhum sítio partilha coordenada com outro',
        len({(x['lat'], x['lon']) for x in s}) == len(s),
@@ -122,6 +131,58 @@ exigir('nenhum concelho vem em MAIÚSCULAS da CAOP',
 # mega, é preciso repensar — não deixar acontecer por acumulação.
 tam = os.path.getsize(os.path.join(RAIZ, 'data', 'spots.json'))
 exigir('o ficheiro cabe em 500 KB', tam < 500_000, f'{tam / 1024:.0f} KB')
+
+# ------------------------------------------------------ a separação das licenças
+# PORQUE ISTO É UM TESTE E NÃO UM COMENTÁRIO. A ODbL obriga a que uma base
+# DERIVADA do OpenStreetMap saia sob ODbL. O `comunidade.json` só pode sair em
+# CC0 — e só pode ser devolvido ao OpenStreetMap — enquanto for INDEPENDENTE:
+# basta um `osm_id`, uma rua ou uma localidade copiada de um nó lá dentro para
+# deixar de o ser, e a partir daí estamos a publicar sob a licença errada sem
+# ninguém dar por isso. Esta guarda mata a construção antes disso.
+CHAVES_COMUNIDADE = {'id', 'lat', 'lon', 'nome', 'ap', 'esc', 'n', 'con', 'dis',
+                     'reg', 'dico', 'nota', 'quem', 'quando', 'cedencia', 'fontes'}
+com_caminho = os.path.join(RAIZ, 'data', 'comunidade.json')
+exigir('data/comunidade.json existe', os.path.exists(com_caminho))
+if os.path.exists(com_caminho):
+    com = json.load(open(com_caminho, encoding='utf-8'))
+    cs = com.get('sitios', [])
+    exigir('a camada da comunidade sai em CC0',
+           'CC0' in (com.get('meta', {}).get('licenca') or ''),
+           str(com.get('meta', {}).get('licenca')))
+    maus = sorted({k for x in cs for k in x} - CHAVES_COMUNIDADE)
+    exigir('nenhum registo da comunidade tem chaves de fora do esquema',
+           not maus, str(maus))
+    exigir('nenhum registo da comunidade refere o OpenStreetMap',
+           not [x for x in cs if 'osm' in x or 'rua' in x or 'loc' in x])
+    exigir('os identificadores da comunidade estão na gama reservada',
+           all(x.get('id', 0) >= 2_000_000 for x in cs),
+           str([x.get('id') for x in cs if x.get('id', 0) < 2_000_000][:3]))
+    exigir('cada registo da comunidade traz a prova da cedência',
+           all(x.get('cedencia') for x in cs))
+
+# A GUARDA TEM DE MORDER MESMO COM O FICHEIRO VAZIO.
+# Enquanto ninguém tiver enviado nada, as três afirmações acima correm sobre uma
+# lista vazia e passam por passar — que é a forma mais silenciosa de um teste
+# mentir. Aqui a regra é aplicada a um registo FABRICADO com uma chave proibida:
+# se um dia alguém alargar o esquema sem pensar, isto cai primeiro.
+_falso = {'id': 2000000, 'lat': 40.0, 'lon': -8.0, 'osm': ['n123']}
+exigir('e a guarda do esquema apanha mesmo uma chave do OpenStreetMap',
+       bool(set(_falso) - CHAVES_COMUNIDADE),
+       'a guarda deixaria passar um `osm` dentro do comunidade.json')
+
+osm_caminho = os.path.join(RAIZ, 'data', 'osm.json')
+exigir('data/osm.json existe', os.path.exists(osm_caminho))
+if os.path.exists(osm_caminho):
+    o = json.load(open(osm_caminho, encoding='utf-8'))
+    exigir('a camada das fontes sai em ODbL',
+           'ODbL' in (o.get('meta', {}).get('licenca') or ''))
+    exigir('a camada das fontes NÃO contém envios da comunidade',
+           not [x for x in o.get('spots', []) if 'COM' in (x.get('fontes') or [])])
+    exigir('a fusão declara que é uma base colectiva',
+           'base_colectiva' in meta, 'falta a nota da secção 4.5 a) da ODbL')
+    exigir('a fusão = fontes + comunidade',
+           len(s) == len(o.get('spots', [])) + len(cs),
+           f"{len(s)} vs {len(o.get('spots', []))} + {len(cs)}")
 
 print(f'\n{len(falhas)} falhas')
 if falhas:

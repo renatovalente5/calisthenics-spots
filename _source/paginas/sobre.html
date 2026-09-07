@@ -152,6 +152,27 @@
     <li><strong>Street View</strong> — abre o Google Maps ao nível do chão.</li>
   </ul>
 
+  <h2>Três ficheiros, e é por causa da licença</h2>
+  <p>Os dados saem em três ficheiros, e não é arrumação:</p>
+  <ul>
+    <li><a href="{{BASE}}data/osm.json"><code>data/osm.json</code></a> — o que vem
+      das fontes abertas (OpenStreetMap e as quatro câmaras), sob
+      <a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">ODbL 1.0</a>.</li>
+    <li><a href="{{BASE}}data/comunidade.json"><code>data/comunidade.json</code></a> —
+      os sítios enviados por quem os usa, em
+      <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.pt" rel="noopener">CC0</a>,
+      domínio público.</li>
+    <li><a href="{{BASE}}data/spots.json"><code>data/spots.json</code></a> — a fusão
+      dos dois, que é o que a aplicação carrega, sob ODbL.</li>
+  </ul>
+  <p>A ODbL obriga a que tudo o que <em>derive</em> do OpenStreetMap saia também
+  sob ODbL. Se misturássemos os envios com os nós do OSM num só ficheiro, os
+  envios ficavam presos a essa licença — e deixavam de poder ser devolvidos ao
+  próprio OpenStreetMap, que é o objectivo. Mantendo-os numa base separada e
+  independente — sem um único identificador, rua ou localidade vindos do OSM —
+  a secção 4.5 a) da ODbL deixa cada camada com a sua licença. Há um teste que
+  mata a construção se uma chave a mais aparecer no ficheiro da comunidade.</p>
+
   <h2>Quanto custa e quem paga</h2>
   <p>Nada, e ninguém. O site é um conjunto de ficheiros estáticos alojados no
   GitHub Pages. O mapa usa <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a>,

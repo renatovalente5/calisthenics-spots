@@ -4,10 +4,17 @@ Allow: /
 # que fazer num motor de busca.
 Disallow: /gerir/
 
-# Os dados são públicos e livres (ODbL). Se os quiseres, leva o ficheiro
-# inteiro em vez de rastejar o site — está tudo aqui, com a atribuição lá
-# dentro, e é um pedido em vez de mil:
-#   https://calisthenics-spots.pt/data/spots.json
-# A fonte original é o OpenStreetMap: https://www.openstreetmap.org/copyright
+# Os dados são públicos e livres. Se os quiseres, leva os ficheiros em vez de
+# rastejar o site — está tudo lá, com a atribuição lá dentro, e é um pedido em
+# vez de mil. São TRÊS, e a separação é de licença:
+#
+#   https://calisthenics-spots.pt/data/spots.json       ODbL 1.0  (a fusão)
+#   https://calisthenics-spots.pt/data/osm.json         ODbL 1.0  (as fontes)
+#   https://calisthenics-spots.pt/data/comunidade.json  CC0 1.0   (os envios)
+#
+# O `comunidade.json` é uma base INDEPENDENTE, em domínio público: leva-o sem
+# obrigação nenhuma, e leva-o para o OpenStreetMap se quiseres — é para isso que
+# está em CC0. A fonte do resto é o OpenStreetMap:
+# https://www.openstreetmap.org/copyright
 
 Sitemap: https://calisthenics-spots.pt/sitemap.xml
